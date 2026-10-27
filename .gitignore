@@ -1,0 +1,41 @@
+# Reference binaries (PotPlayer Windows install)
+*.dll
+*.exe
+*.scr
+*.dsf
+*.sdb
+*.wav
+d3dcompiler_47.dll
+Module/
+AviSynth/
+VapourSynth/
+
+# Build directories
+build/
+bin/
+*.o
+*.so
+*.a
+
+# CMake generated files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.ninja
+
+# Qt generated files
+moc_*
+ui_*
+qrc_*
+*.qmlc
+*.jsc
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.user
+
+# Local logs and test outputs
+*.log
+scratch/
