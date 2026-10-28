@@ -182,5 +182,24 @@ include(GNUInstallDirs)
 install(TARGETS potplayer-linux DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES data/potplayer-linux.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 install(DIRECTORY data/icons/ DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor)
+
+# Packaging with CPack
+set(CPACK_PACKAGE_NAME "potplayer-linux")
+set(CPACK_PACKAGE_VENDOR "PotPlayer Linux Contributors")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Native PotPlayer Media Player for Linux")
+set(CPACK_PACKAGE_VERSION "1.0.0")
+set(CPACK_PACKAGE_VERSION_MAJOR "1")
+set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_PATCH "0")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_PACKAGE_CONTACT "https://github.com/selfi123/potplayer-linux")
+
+set(CPACK_GENERATOR "TGZ;RPM")
+set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
+set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
+set(CPACK_RPM_PACKAGE_REQUIRES "qt6-qtbase >= 6.5, mpv-libs >= 0.35, zlib")
+
+include(CPack)
 install(FILES data/potplayer-linux.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 
