@@ -20,11 +20,11 @@ This project delivers an authentic native Linux equivalent:
 ## Documentation
 
 Detailed engineering documentation is maintained in the `docs/` directory:
-- [Feature Parity Matrix](file:///home/ni8stalker/.wine/drive_c/Program%20Files/DAUM/PotPlayer/docs/FEATURE_PARITY.md): Complete checklist of PotPlayer features across 10 categories with implementation statuses (`DISCOVERED`, `PLANNED`, `IMPLEMENTED`, `TESTED`, `BLOCKED`).
-- [Application Architecture](file:///home/ni8stalker/.wine/drive_c/Program%20Files/DAUM/PotPlayer/docs/ARCHITECTURE.md): Component layout, subsystem responsibilities, and data flow diagrams.
-- [Reverse Engineering Report](file:///home/ni8stalker/.wine/drive_c/Program%20Files/DAUM/PotPlayer/docs/REVERSE_ENGINEERING.md): Binary analysis, REA / Ghidra 12.2 findings, reference hashes, command-line arguments, and skin decomposition.
-- [Project Roadmap](file:///home/ni8stalker/.wine/drive_c/Program%20Files/DAUM/PotPlayer/docs/ROADMAP.md): Milestones 1 through 5.
-- [Test Plan](file:///home/ni8stalker/.wine/drive_c/Program%20Files/DAUM/PotPlayer/docs/TEST_PLAN.md): Automated and manual test procedures.
+- [Feature Parity Matrix](file:///home/ni8stalker/Projects/potplayer-linux/docs/FEATURE_PARITY.md): Complete checklist of PotPlayer features across 10 categories with implementation statuses (`DISCOVERED`, `PLANNED`, `IMPLEMENTED`, `TESTED`, `BLOCKED`).
+- [Application Architecture](file:///home/ni8stalker/Projects/potplayer-linux/docs/ARCHITECTURE.md): Component layout, subsystem responsibilities, and data flow diagrams.
+- [Reverse Engineering Report](file:///home/ni8stalker/Projects/potplayer-linux/docs/REVERSE_ENGINEERING.md): Binary analysis, REA / Ghidra 12.2 findings, reference hashes, command-line arguments, and skin decomposition.
+- [Project Roadmap](file:///home/ni8stalker/Projects/potplayer-linux/docs/ROADMAP.md): Milestones 1 through 5.
+- [Test Plan](file:///home/ni8stalker/Projects/potplayer-linux/docs/TEST_PLAN.md): Automated and manual test procedures.
 
 ---
 
