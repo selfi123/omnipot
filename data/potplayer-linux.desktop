@@ -1,0 +1,17 @@
+[Desktop Entry]
+Name=PotPlayer (Linux Native)
+GenericName=Media Player
+Comment=Native PotPlayer Feature-Complete Media Player for Linux
+Exec=potplayer-linux %U
+Icon=potplayer
+Terminal=false
+Type=Application
+Categories=AudioVideo;Player;Video;Audio;Qt;
+MimeType=video/mp4;video/x-matroska;video/webm;video/avi;video/quicktime;video/x-msvideo;video/x-flv;video/mpeg;video/ogg;audio/mpeg;audio/mp4;audio/flac;audio/x-wav;audio/ogg;audio/aac;audio/opus;audio/x-mpegurl;application/x-mpegurl;
+StartupWMClass=potplayer-linux
+Keywords=media;player;potplayer;video;audio;mpv;streaming;
+Actions=NewWindow;
+
+[Desktop Action NewWindow]
+Name=Open New Window
+Exec=potplayer-linux

@@ -39,3 +39,5 @@ qrc_*
 # Local logs and test outputs
 *.log
 scratch/
+docs/
+scripts/

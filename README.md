@@ -1,36 +1,77 @@
-# PotPlayer Native Linux Clone
+# PotPlayer Linux
 
-A native Linux desktop media player reproducing the interface, rich feature set, and workflows of **Daum/Kakao PotPlayer** for Fedora Linux Workstation.
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![C++20](https://img.shields.io/badge/Language-C%2B%2B20-00599C?logo=c%2B%2B)](https://en.cppreference.com/w/cpp/20)
+[![Qt 6](https://img.shields.io/badge/GUI-Qt%206-41CD52?logo=qt)](https://www.qt.io/)
+[![mpv](https://img.shields.io/badge/Engine-libmpv-darkred)](https://mpv.io/)
+[![Platform: Linux](https://img.shields.io/badge/Platform-Linux%20%7C%20Wayland%20%7C%20X11-FCC624?logo=linux&logoColor=black)](https://www.kernel.org/)
 
-Built with **C++20**, **Qt 6 Widgets**, and the **libmpv** playback engine, running natively without Wine or browser wrappers.
+A pure native Linux media player replicating the interface, high-performance playback, rich feature set, and workflow of **Daum / Kakao PotPlayer**.
 
----
-
-## Architecture & Design
-
-PotPlayer on Windows is renowned for its compact yet powerful interface, extensive keyboard shortcuts, real-time codec status badges, Quick Control Box (`F6`), and comprehensive audio/video/subtitle controls.
-
-This project delivers an authentic native Linux equivalent:
-- **Presentation**: Qt 6 Widgets styled to replicate PotPlayer's iconic dark aesthetic, autohiding on-screen controls (OSC), customized `TimeBar` timeline slider, and docked/floating panels.
-- **Media Engine**: Direct integration with `libmpv` (C API), providing hardware-accelerated video decoding (VAAPI, NVDEC, Vulkan), full FFmpeg container/codec support, and libass subtitle rendering.
-- **Modularity**: Fully decoupled architecture separating the playback engine from the UI, with comprehensive unit tests (`QTest`).
+Built with **C++20**, **Qt 6 Widgets**, and the **libmpv** playback engine, running natively on modern Linux systems (Fedora, Ubuntu, Debian, Arch) without Wine or browser runtimes.
 
 ---
 
-## Documentation
+## Highlights & Features
 
-Detailed engineering documentation is maintained in the `docs/` directory:
-- [Feature Parity Matrix](file:///home/ni8stalker/Projects/potplayer-linux/docs/FEATURE_PARITY.md): Complete checklist of PotPlayer features across 10 categories with implementation statuses (`DISCOVERED`, `PLANNED`, `IMPLEMENTED`, `TESTED`, `BLOCKED`).
-- [Application Architecture](file:///home/ni8stalker/Projects/potplayer-linux/docs/ARCHITECTURE.md): Component layout, subsystem responsibilities, and data flow diagrams.
-- [Reverse Engineering Report](file:///home/ni8stalker/Projects/potplayer-linux/docs/REVERSE_ENGINEERING.md): Binary analysis, REA / Ghidra 12.2 findings, reference hashes, command-line arguments, and skin decomposition.
-- [Project Roadmap](file:///home/ni8stalker/Projects/potplayer-linux/docs/ROADMAP.md): Milestones 1 through 5.
-- [Test Plan](file:///home/ni8stalker/Projects/potplayer-linux/docs/TEST_PLAN.md): Automated and manual test procedures.
+- **Iconic PotPlayer Interface**:
+  - Slim black custom title bar with main menu button (`PotPlayer ▾`), Always on Top toggle (`📌`), and window controls.
+  - Authentic dark theme with 1px border and centered watermark logo when idle.
+  - Razor-sharp vector playback icons (`▶`, `■`, `|◀`, `▶|`, `⏏`, `⚙`, `≡`, `⤢`) with native anti-aliasing.
+  - Signature PotPlayer gold progress volume bar with dynamic vector speaker icon.
+  - Clickable time display toggling elapsed vs. remaining time.
+  - Real-time video/audio codec badges (`S/W`, `H/W`, `HDR`, `H264`, `HEVC`, `AV1`, `AAC`, etc.).
+
+- **High-Performance Media Engine (`libmpv`)**:
+  - Hardware-accelerated decoding via VA-API, NVDEC, and Vulkan.
+  - Supports all major media containers and formats (MKV, MP4, AVI, WebM, FLV, TS, FLAC, MP3, etc.).
+  - Rich subtitle rendering via `libass` (ASS/SSA, SRT, VTT) with real-time subtitle search and online provider integration.
+  - Dynamic audio normalization (`dynaudnorm`) for clear dialogue across dynamic range extremes.
+
+- **PotPlayer Power Features**:
+  - **Quick Control Box (`F6`)**: Multi-tab dialog for Video (Brightness/Contrast/Saturation/Hue), Audio (Equalizer, Normalizer), Subtitles (Sync, Size, Position), and Playback speed.
+  - **Playlist Drawer (`F8`)**: Dockable slide-out playlist with support for `.dpl` (PotPlayer Playlist) and `.m3u` formats, drag-and-drop, shuffle, and repeat modes.
+  - **Pixel Shaders**: Real-time post-processing shaders (Sharpen, Night Mode, Invert, Anime4K).
+  - **Frame & Consecutive Capture**: Save single frames (`Ctrl+E`) or burst capture video segments (`Ctrl+G`) with user-defined intervals and limits.
+  - **Audio Extraction**: Dump high-quality audio streams directly from video files.
+  - **A-B Repeat (`[` / `]` / `\`)**: Loop sections of media with visual markers on the timeline.
+  - **Single Instance**: CLI commands and opened media automatically forward to the existing running instance.
 
 ---
 
-## Dependencies & Fedora 44 Installation
+## Keyboard & Mouse Shortcuts
 
-The following packages are required on Fedora Linux 44:
+| Shortcut | Action |
+| :--- | :--- |
+| `Space` | Play / Pause toggle |
+| `Enter` / `Middle Click` | Toggle Fullscreen |
+| `Escape` | Exit Fullscreen |
+| `Left` / `Right` | Seek backward / forward 5 seconds |
+| `Ctrl + Left` / `Right` | Seek backward / forward 30 seconds |
+| `Up` / `Down` / `Mouse Wheel` | Volume up / down (2% step) |
+| `M` | Mute / Unmute toggle |
+| `Z` | Reset playback speed (1.0x) |
+| `X` | Slower speed (-0.1x) |
+| `C` | Faster speed (+0.1x) |
+| `D` | Previous frame step |
+| `F` | Next frame step |
+| `[` / `]` | Set A-B Repeat: Point A / Point B |
+| `\` | Clear A-B Repeat |
+| `Tab` | Toggle OSD playback statistics overlay |
+| `F5` | Preferences dialog |
+| `F6` | Quick Control Box |
+| `F8` | Toggle Playlist Drawer |
+| `Ctrl + O` | Open file dialog |
+| `Ctrl + U` | Open URL dialog |
+| `Ctrl + E` | Capture current frame |
+| `Ctrl + G` | Consecutive frame capture |
+| `Ctrl + Q` | Exit application |
+
+---
+
+## Dependencies & Installation
+
+### Fedora Linux (39 / 40 / 41 / Rawhide)
 
 ```bash
 sudo dnf install -y \
@@ -38,31 +79,55 @@ sudo dnf install -y \
     cmake \
     ninja-build \
     qt6-qtbase-devel \
-    mpv-devel
+    mpv-devel \
+    zlib-devel
 ```
 
-### Dependency Roles
-| Package | Version | Purpose |
-| :--- | :--- | :--- |
-| `gcc-c++` | >= 16.0 | C++20 standard compiler support |
-| `cmake` | >= 3.25 | Cross-platform build system |
-| `ninja-build` | >= 1.12 | High-speed parallel build tool |
-| `qt6-qtbase-devel` | >= 6.10 | Qt 6 Core, Gui, Widgets headers and moc/uic/rcc tools |
-| `mpv-devel` | >= 0.40 | libmpv C development headers (`client.h`) and shared libraries |
+### Ubuntu / Debian (24.04 LTS+)
+
+```bash
+sudo apt update && sudo apt install -y \
+    g++ \
+    cmake \
+    ninja-build \
+    qt6-base-dev \
+    libmpv-dev \
+    zlib1g-dev
+```
+
+### Arch Linux
+
+```bash
+sudo pacman -S --needed \
+    base-devel \
+    cmake \
+    ninja \
+    qt6-base \
+    mpv
+```
 
 ---
 
-## Building the Application
+## Building from Source
 
 ```bash
-# Configure the build directory
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
+# Clone the repository
+git clone https://github.com/selfi123/potplayer-linux.git
+cd potplayer-linux
 
-# Compile the application and test suites
-cmake --build build
+# Configure with CMake and Ninja
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
-# Run automated tests
+# Build executable and test suites
+cmake --build build -j$(nproc)
+
+# Run test suite
 ctest --test-dir build --output-on-failure
+
+# Install to system (or ~/.local)
+sudo cmake --install build
+# Or install locally without root:
+# cmake --install build --prefix ~/.local
 ```
 
 ---
@@ -70,32 +135,31 @@ ctest --test-dir build --output-on-failure
 ## Running the Player
 
 ```bash
-# Launch without arguments (opens main player interface)
-./build/potplayer-linux
+# Launch player
+potplayer-linux
 
-# Open a local file directly
-./build/potplayer-linux /path/to/video.mp4
+# Open a media file
+potplayer-linux /path/to/movie.mkv
 
-# Open with start time offset (compatible with PotPlayer CLI)
-./build/potplayer-linux /path/to/video.mp4 /seek=00:15:30
+# Open a network stream
+potplayer-linux "https://example.com/stream.m3u8"
+
+# Seek directly on launch
+potplayer-linux /path/to/video.mp4 /seek=00:42:00
 ```
 
 ---
 
-## Primary Keyboard Shortcuts
+## Contributing
 
-| Key | Action |
-| :--- | :--- |
-| `Space` | Play / Pause |
-| `Enter` | Fullscreen toggle |
-| `Left` / `Right` | Seek backward / forward 5 seconds |
-| `Ctrl + Left` / `Right` | Seek backward / forward 30 seconds |
-| `Up` / `Down` | Volume up / down 2% |
-| `M` | Mute toggle |
-| `Z` / `X` / `C` | Playback speed: Reset (1.0x) / Slow down (-0.1x) / Speed up (+0.1x) |
-| `D` / `F` | Previous frame / Next frame step |
-| `[` / `]` / `\` | Repeat section A / Repeat section B / Clear repeat |
-| `Tab` / `Ctrl+F1` | Playback statistics OSD |
-| `F5` | Preferences dialog |
-| `F6` | Control Box (Quick settings) |
-| `F8` | Playlist Drawer toggle |
+Pull requests and bug reports are welcome! Please ensure code adheres to C++20 standard conventions and all test suites pass before submitting PRs:
+
+```bash
+ctest --test-dir build --output-on-failure
+```
+
+---
+
+## License
+
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. See [`LICENSE`](LICENSE) for details.

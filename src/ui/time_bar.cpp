@@ -84,9 +84,16 @@ void TimeBar::mousePressEvent(QMouseEvent *event) {
 void TimeBar::mouseMoveEvent(QMouseEvent *event) {
     if (m_duration > 0.0) {
         double hoverSec = posToSeconds(event->pos().x());
-        QToolTip::showText(event->globalPosition().toPoint(), formatTime(hoverSec), this);
+        QPoint tipPos = event->globalPosition().toPoint() - QPoint(25, 34);
+        QString tipHtml = QStringLiteral("<span style='color: #FFFFFF; font-weight: bold;'>%1</span>").arg(formatTime(hoverSec));
+        QToolTip::showText(tipPos, tipHtml, this);
     }
     QSlider::mouseMoveEvent(event);
+}
+
+void TimeBar::leaveEvent(QEvent *event) {
+    QToolTip::hideText();
+    QSlider::leaveEvent(event);
 }
 
 void TimeBar::paintEvent(QPaintEvent *) {

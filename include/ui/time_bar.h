@@ -26,6 +26,7 @@ Q_SIGNALS:
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void leaveEvent(QEvent *event) override;
     void paintEvent(QPaintEvent *event) override;
 
 private:
