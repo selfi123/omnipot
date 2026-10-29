@@ -2,6 +2,7 @@
 #include <QSignalSpy>
 #include <QTemporaryDir>
 #include <QFile>
+#include <QStandardPaths>
 #include "playlist/dpl_parser.h"
 #include "playlist/m3u_parser.h"
 #include "playlist/playlist_manager.h"
@@ -11,33 +12,38 @@ class TestPlaylist : public QObject {
     Q_OBJECT
 
 private Q_SLOTS:
+    void initTestCase() {
+        // The settings tests write and reset config.ini; never touch the developer's real one
+        QStandardPaths::setTestModeEnabled(true);
+    }
+
     void testDplParserRoundTrip() {
         QTemporaryDir tempDir;
         QVERIFY(tempDir.isValid());
         QString dplPath = tempDir.filePath("test.dpl");
 
-        QList<PotPlayer::PlaylistItem> originalItems;
-        PotPlayer::PlaylistItem item1;
+        QList<Omnipot::PlaylistItem> originalItems;
+        Omnipot::PlaylistItem item1;
         item1.filePath = "/videos/movie1.mp4";
         item1.title = "Movie 1 (Special Edition)";
         item1.duration = 7200.5; // 7,200,500 ms
         item1.startOffset = 120.0;
         originalItems.append(item1);
 
-        PotPlayer::PlaylistItem item2;
+        Omnipot::PlaylistItem item2;
         item2.filePath = "/videos/movie2.mkv";
         item2.title = "movie2.mkv";
         item2.duration = 3600.0;
         item2.startOffset = 0.0;
         originalItems.append(item2);
 
-        bool saved = PotPlayer::DplParser::save(dplPath, originalItems, item1.filePath, 350.0);
+        bool saved = Omnipot::DplParser::save(dplPath, originalItems, item1.filePath, 350.0);
         QVERIFY(saved);
         QVERIFY(QFile::exists(dplPath));
 
         QString curPlaying;
         double playtime = 0.0;
-        QList<PotPlayer::PlaylistItem> loadedItems = PotPlayer::DplParser::load(dplPath, &curPlaying, &playtime);
+        QList<Omnipot::PlaylistItem> loadedItems = Omnipot::DplParser::load(dplPath, &curPlaying, &playtime);
 
         QCOMPARE(loadedItems.size(), 2);
         QCOMPARE(curPlaying, QString("/videos/movie1.mp4"));
@@ -58,23 +64,23 @@ private Q_SLOTS:
         QVERIFY(tempDir.isValid());
         QString m3uPath = tempDir.filePath("test.m3u8");
 
-        QList<PotPlayer::PlaylistItem> originalItems;
-        PotPlayer::PlaylistItem item1;
+        QList<Omnipot::PlaylistItem> originalItems;
+        Omnipot::PlaylistItem item1;
         item1.filePath = "/music/song1.flac";
         item1.title = "Artist - Song 1";
         item1.duration = 245.0;
         originalItems.append(item1);
 
-        PotPlayer::PlaylistItem item2;
+        Omnipot::PlaylistItem item2;
         item2.filePath = "/music/song2.mp3";
         item2.title = "song2.mp3";
         item2.duration = 180.0;
         originalItems.append(item2);
 
-        bool saved = PotPlayer::M3uParser::save(m3uPath, originalItems);
+        bool saved = Omnipot::M3uParser::save(m3uPath, originalItems);
         QVERIFY(saved);
 
-        QList<PotPlayer::PlaylistItem> loadedItems = PotPlayer::M3uParser::load(m3uPath);
+        QList<Omnipot::PlaylistItem> loadedItems = Omnipot::M3uParser::load(m3uPath);
         QCOMPARE(loadedItems.size(), 2);
         QCOMPARE(loadedItems[0].filePath, QString("/music/song1.flac"));
         QCOMPARE(loadedItems[0].title, QString("Artist - Song 1"));
@@ -85,16 +91,16 @@ private Q_SLOTS:
     }
 
     void testPlaylistManagerOperations() {
-        PotPlayer::PlaylistManager manager;
-        QSignalSpy changeSpy(&manager, &PotPlayer::PlaylistManager::playlistChanged);
-        QSignalSpy itemSpy(&manager, &PotPlayer::PlaylistManager::currentItemChanged);
+        Omnipot::PlaylistManager manager;
+        QSignalSpy changeSpy(&manager, &Omnipot::PlaylistManager::playlistChanged);
+        QSignalSpy itemSpy(&manager, &Omnipot::PlaylistManager::currentItemChanged);
 
         QCOMPARE(manager.count(), 0);
         QCOMPARE(manager.currentIndex(), -1);
 
-        PotPlayer::PlaylistItem it1{"/path/1.mp4", "Track 1", 100.0, 0.0};
-        PotPlayer::PlaylistItem it2{"/path/2.mp4", "Track 2", 200.0, 0.0};
-        PotPlayer::PlaylistItem it3{"/path/3.mp4", "Track 3", 300.0, 0.0};
+        Omnipot::PlaylistItem it1{"/path/1.mp4", "Track 1", 100.0, 0.0};
+        Omnipot::PlaylistItem it2{"/path/2.mp4", "Track 2", 200.0, 0.0};
+        Omnipot::PlaylistItem it3{"/path/3.mp4", "Track 3", 300.0, 0.0};
 
         manager.addItem(it1);
         manager.addItem(it2);
@@ -106,8 +112,8 @@ private Q_SLOTS:
         // Test Model Data
         QModelIndex idx0 = manager.index(0, 0);
         QVERIFY(idx0.isValid());
-        QCOMPARE(manager.data(idx0, PotPlayer::PlaylistManager::FilePathRole).toString(), QString("/path/1.mp4"));
-        QCOMPARE(manager.data(idx0, PotPlayer::PlaylistManager::TitleRole).toString(), QString("Track 1"));
+        QCOMPARE(manager.data(idx0, Omnipot::PlaylistManager::FilePathRole).toString(), QString("/path/1.mp4"));
+        QCOMPARE(manager.data(idx0, Omnipot::PlaylistManager::TitleRole).toString(), QString("Track 1"));
 
         // Selection & Current Item
         manager.setCurrentIndex(0);
@@ -129,22 +135,22 @@ private Q_SLOTS:
         QVERIFY(!manager.hasNext());
 
         // RepeatMode::All
-        manager.setRepeatMode(PotPlayer::RepeatMode::All);
+        manager.setRepeatMode(Omnipot::RepeatMode::All);
         QVERIFY(manager.hasNext());
         manager.next();
         QCOMPARE(manager.currentIndex(), 0); // Wraps around
 
         // RepeatMode::Track
-        manager.setRepeatMode(PotPlayer::RepeatMode::Track);
+        manager.setRepeatMode(Omnipot::RepeatMode::Track);
         int beforeSpyCount = itemSpy.count();
         manager.next();
         QCOMPARE(manager.currentIndex(), 0); // Stays on track 0
         QCOMPARE(itemSpy.count(), beforeSpyCount + 1);
 
         // Move Item
-        manager.setRepeatMode(PotPlayer::RepeatMode::None);
+        manager.setRepeatMode(Omnipot::RepeatMode::None);
         manager.moveItem(0, 2); // move track 1 to end
-        QCOMPARE(manager.data(manager.index(2, 0), PotPlayer::PlaylistManager::TitleRole).toString(), QString("Track 1"));
+        QCOMPARE(manager.data(manager.index(2, 0), Omnipot::PlaylistManager::TitleRole).toString(), QString("Track 1"));
         QCOMPARE(manager.currentIndex(), 2);
 
         // Remove Item
@@ -157,8 +163,22 @@ private Q_SLOTS:
         QCOMPARE(manager.currentIndex(), -1);
     }
 
+    void testPlaybackModeChangedSignal() {
+        Omnipot::PlaylistManager manager;
+        QSignalSpy spy(&manager, &Omnipot::PlaylistManager::playbackModeChanged);
+
+        manager.setRepeatMode(Omnipot::RepeatMode::All);
+        manager.setShuffle(true);
+        QCOMPARE(spy.count(), 2);
+
+        // Re-applying the same values (e.g. from saved preferences) must not re-emit
+        manager.setRepeatMode(Omnipot::RepeatMode::All);
+        manager.setShuffle(true);
+        QCOMPARE(spy.count(), 2);
+    }
+
     void testSettingsManager() {
-        auto &settings = PotPlayer::SettingsManager::instance();
+        auto &settings = Omnipot::SettingsManager::instance();
 
         // Volume & Mute
         settings.setVolume(85);
@@ -194,7 +214,7 @@ private Q_SLOTS:
     }
 
     void testAdvancedSettingsAndPresets() {
-        auto &settings = PotPlayer::SettingsManager::instance();
+        auto &settings = Omnipot::SettingsManager::instance();
 
         settings.setVideoScaler(QStringLiteral("lanczos"));
         QCOMPARE(settings.videoScaler(), QStringLiteral("lanczos"));
@@ -206,7 +226,7 @@ private Q_SLOTS:
         QCOMPARE(settings.isAudioNormalization(), true);
 
         // Export presets
-        QString tmpIni = QDir::tempPath() + QStringLiteral("/test_potplayer_presets.ini");
+        QString tmpIni = QDir::tempPath() + QStringLiteral("/test_omnipot_presets.ini");
         bool exported = settings.exportSettings(tmpIni);
         QVERIFY(exported);
         QVERIFY(QFile::exists(tmpIni));

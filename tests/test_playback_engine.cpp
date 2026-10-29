@@ -1,21 +1,23 @@
 #include <QTest>
 #include <QSignalSpy>
+#include <QStandardPaths>
 #include "playback/playback_engine.h"
 #include "playback/mpv_engine.h"
 #include "ui/time_bar.h"
-#include "ui/pot_icons.h"
+#include "ui/omni_icons.h"
 
 class TestPlaybackEngine : public QObject {
     Q_OBJECT
 
 private Q_SLOTS:
     void initTestCase() {
-        // Run before all tests
+        // MpvEngine persists settings; keep them out of the developer's real config
+        QStandardPaths::setTestModeEnabled(true);
     }
 
     void testDefaultValues() {
-        PotPlayer::MpvEngine engine;
-        QCOMPARE(engine.state(), PotPlayer::PlaybackState::Idle);
+        Omnipot::MpvEngine engine;
+        QCOMPARE(engine.state(), Omnipot::PlaybackState::Idle);
         QCOMPARE(engine.position(), 0.0);
         QCOMPARE(engine.duration(), 0.0);
         QCOMPARE(engine.speed(), 1.0);
@@ -24,7 +26,7 @@ private Q_SLOTS:
     }
 
     void testVolumeClamping() {
-        PotPlayer::MpvEngine engine;
+        Omnipot::MpvEngine engine;
         // Setting negative volume should clamp to 0
         engine.setVolume(-10);
         // Setting excess volume should clamp to 200
@@ -33,7 +35,7 @@ private Q_SLOTS:
     }
 
     void testSpeedClamping() {
-        PotPlayer::MpvEngine engine;
+        Omnipot::MpvEngine engine;
         // Setting speed below 0.2 should clamp to 0.2
         engine.setSpeed(0.05);
         // Setting speed above 12.0 should clamp to 12.0
@@ -41,7 +43,7 @@ private Q_SLOTS:
     }
 
     void testAudioNormalizer() {
-        PotPlayer::MpvEngine engine;
+        Omnipot::MpvEngine engine;
         engine.setNormalizerEnabled(true);
         QCOMPARE(engine.isNormalizerEnabled(), true);
         engine.setNormalizerEnabled(false);
@@ -49,7 +51,7 @@ private Q_SLOTS:
     }
 
     void testTimeBarFormatting() {
-        PotPlayer::TimeBar bar;
+        Omnipot::TimeBar bar;
         bar.setDuration(3665.0); // 1 hour 1 minute 5 seconds
         bar.setPosition(65.0);   // 1 minute 5 seconds
 
@@ -57,13 +59,13 @@ private Q_SLOTS:
     }
 
     void testSignalSpies() {
-        PotPlayer::MpvEngine engine;
-        QSignalSpy stateSpy(&engine, &PotPlayer::PlaybackEngine::stateChanged);
-        QSignalSpy volSpy(&engine, &PotPlayer::PlaybackEngine::volumeChanged);
-        QSignalSpy muteSpy(&engine, &PotPlayer::PlaybackEngine::muteChanged);
-        QSignalSpy speedSpy(&engine, &PotPlayer::PlaybackEngine::speedChanged);
-        QSignalSpy colorSpy(&engine, &PotPlayer::PlaybackEngine::colorsChanged);
-        QSignalSpy eqSpy(&engine, &PotPlayer::PlaybackEngine::equalizerChanged);
+        Omnipot::MpvEngine engine;
+        QSignalSpy stateSpy(&engine, &Omnipot::PlaybackEngine::stateChanged);
+        QSignalSpy volSpy(&engine, &Omnipot::PlaybackEngine::volumeChanged);
+        QSignalSpy muteSpy(&engine, &Omnipot::PlaybackEngine::muteChanged);
+        QSignalSpy speedSpy(&engine, &Omnipot::PlaybackEngine::speedChanged);
+        QSignalSpy colorSpy(&engine, &Omnipot::PlaybackEngine::colorsChanged);
+        QSignalSpy eqSpy(&engine, &Omnipot::PlaybackEngine::equalizerChanged);
 
         QVERIFY(stateSpy.isValid());
         QVERIFY(volSpy.isValid());
@@ -74,7 +76,7 @@ private Q_SLOTS:
     }
 
     void testColorAdjustments() {
-        PotPlayer::MpvEngine engine;
+        Omnipot::MpvEngine engine;
         QCOMPARE(engine.brightness(), 0);
         QCOMPARE(engine.contrast(), 0);
         QCOMPARE(engine.saturation(), 0);
@@ -104,7 +106,7 @@ private Q_SLOTS:
     }
 
     void testEqualizer() {
-        PotPlayer::MpvEngine engine;
+        Omnipot::MpvEngine engine;
         QCOMPARE(engine.isEqualizerEnabled(), false);
 
         for (int i = 0; i < 10; ++i) {
@@ -130,7 +132,7 @@ private Q_SLOTS:
     }
 
     void testVideoTransforms() {
-        PotPlayer::MpvEngine engine;
+        Omnipot::MpvEngine engine;
         QCOMPARE(engine.rotation(), 0);
         QCOMPARE(engine.isHorizontalFlip(), false);
         QCOMPARE(engine.isVerticalFlip(), false);
@@ -150,7 +152,7 @@ private Q_SLOTS:
     }
 
     void testSubtitleAndDelays() {
-        PotPlayer::MpvEngine engine;
+        Omnipot::MpvEngine engine;
         QCOMPARE(engine.subtitleFontSize(), 55);
         QCOMPARE(engine.subtitlePosition(), 100);
         QCOMPARE(engine.isAssOverride(), false);
@@ -171,7 +173,7 @@ private Q_SLOTS:
     }
 
     void testLooping() {
-        PotPlayer::MpvEngine engine;
+        Omnipot::MpvEngine engine;
         QCOMPARE(engine.loopA(), -1.0);
         QCOMPARE(engine.loopB(), -1.0);
 
@@ -186,7 +188,7 @@ private Q_SLOTS:
     }
 
     void testAudioDevices() {
-        PotPlayer::MpvEngine engine;
+        Omnipot::MpvEngine engine;
         engine.initialize();
 
         QStringList devList = engine.audioDevices();
@@ -199,34 +201,34 @@ private Q_SLOTS:
         engine.shutdown();
     }
 
-    void testPotIcons() {
-        QIcon play = PotPlayer::PotIcons::playIcon();
+    void testOmniIcons() {
+        QIcon play = Omnipot::OmniIcons::playIcon();
         QVERIFY(!play.isNull());
-        QIcon pause = PotPlayer::PotIcons::pauseIcon();
+        QIcon pause = Omnipot::OmniIcons::pauseIcon();
         QVERIFY(!pause.isNull());
-        QIcon stop = PotPlayer::PotIcons::stopIcon();
+        QIcon stop = Omnipot::OmniIcons::stopIcon();
         QVERIFY(!stop.isNull());
-        QIcon prev = PotPlayer::PotIcons::prevIcon();
+        QIcon prev = Omnipot::OmniIcons::prevIcon();
         QVERIFY(!prev.isNull());
-        QIcon next = PotPlayer::PotIcons::nextIcon();
+        QIcon next = Omnipot::OmniIcons::nextIcon();
         QVERIFY(!next.isNull());
-        QIcon open = PotPlayer::PotIcons::openIcon();
+        QIcon open = Omnipot::OmniIcons::openIcon();
         QVERIFY(!open.isNull());
-        QIcon vol = PotPlayer::PotIcons::volumeIcon(100, false);
+        QIcon vol = Omnipot::OmniIcons::volumeIcon(100, false);
         QVERIFY(!vol.isNull());
-        QIcon volMuted = PotPlayer::PotIcons::volumeIcon(0, true);
+        QIcon volMuted = Omnipot::OmniIcons::volumeIcon(0, true);
         QVERIFY(!volMuted.isNull());
-        QIcon pl = PotPlayer::PotIcons::playlistIcon();
+        QIcon pl = Omnipot::OmniIcons::playlistIcon();
         QVERIFY(!pl.isNull());
-        QIcon cb = PotPlayer::PotIcons::controlBoxIcon();
+        QIcon cb = Omnipot::OmniIcons::controlBoxIcon();
         QVERIFY(!cb.isNull());
-        QIcon fs = PotPlayer::PotIcons::fullscreenIcon(false);
+        QIcon fs = Omnipot::OmniIcons::fullscreenIcon(false);
         QVERIFY(!fs.isNull());
-        QIcon fsTrue = PotPlayer::PotIcons::fullscreenIcon(true);
+        QIcon fsTrue = Omnipot::OmniIcons::fullscreenIcon(true);
         QVERIFY(!fsTrue.isNull());
-        QIcon pin = PotPlayer::PotIcons::pinIcon(false);
+        QIcon pin = Omnipot::OmniIcons::pinIcon(false);
         QVERIFY(!pin.isNull());
-        QIcon pinPinned = PotPlayer::PotIcons::pinIcon(true);
+        QIcon pinPinned = Omnipot::OmniIcons::pinIcon(true);
         QVERIFY(!pinPinned.isNull());
     }
 };

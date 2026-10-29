@@ -18,7 +18,11 @@
 #include <QUrl>
 #include <QToolTip>
 #include <QFontMetrics>
+#include <QShortcut>
+#include <QSignalBlocker>
+#include <QCursor>
 #include <algorithm>
+#include <utility>
 #include "video/frame_capture.h"
 #include "video/shader_manager.h"
 #include "ui/consecutive_capture_dialog.h"
@@ -26,9 +30,9 @@
 #include "ui/subtitle_search_dialog.h"
 #include "ui/open_url_dialog.h"
 #include "ui/preferences_dialog.h"
-#include "ui/pot_icons.h"
+#include "ui/omni_icons.h"
 
-namespace PotPlayer {
+namespace Omnipot {
 
 MainWindow::MainWindow(PlaybackEngine *engine, QWidget *parent)
     : QMainWindow(parent)
@@ -36,7 +40,7 @@ MainWindow::MainWindow(PlaybackEngine *engine, QWidget *parent)
 {
     setWindowFlags(Qt::FramelessWindowHint | Qt::WindowSystemMenuHint | Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint);
     setMouseTracking(true);
-    setWindowTitle(QStringLiteral("PotPlayer Linux"));
+    setWindowTitle(QStringLiteral("Omnipot"));
     resize(1080, 640);
     setMinimumSize(480, 320);
     setAcceptDrops(true);
@@ -64,9 +68,22 @@ MainWindow::MainWindow(PlaybackEngine *engine, QWidget *parent)
     // Connect Playlist Signals
     connect(m_playlistManager, &PlaylistManager::currentItemChanged, this, [this](const PlaylistItem &item) {
         if (item.isValid()) {
-            openMediaFile(item.filePath);
+            double start = std::exchange(m_pendingStart, -1.0);
+            if (start < 0.0 && item.startOffset > 0.0) {
+                start = item.startOffset;
+            }
+            openMediaFile(item.filePath, start);
         }
     });
+    connect(m_playlistManager, &PlaylistManager::playbackModeChanged, this, [this]() {
+        auto &settings = SettingsManager::instance();
+        settings.setRepeatMode(static_cast<int>(m_playlistManager->repeatMode()));
+        settings.setShuffle(m_playlistManager->isShuffle());
+    });
+
+    // Tab would otherwise be swallowed by focus navigation before keyPressEvent
+    auto *infoShortcut = new QShortcut(QKeySequence(Qt::Key_Tab), this);
+    connect(infoShortcut, &QShortcut::activated, this, &MainWindow::toggleInfoOverlay);
 
     // Restore persistent settings
     auto &settings = SettingsManager::instance();
@@ -81,6 +98,35 @@ MainWindow::MainWindow(PlaybackEngine *engine, QWidget *parent)
     m_engine->setMuted(settings.isMuted());
     onVolumeChanged(settings.volume());
     onMuteChanged(settings.isMuted());
+    applyStoredPreferences();
+}
+
+void MainWindow::applyStoredPreferences() {
+    auto &settings = SettingsManager::instance();
+    m_engine->setHwdec(settings.hwdec());
+    m_engine->setSpeed(settings.speed());
+    if (mpv_handle *mpv = m_engine->rawMpvHandle()) {
+        mpv_set_property_string(mpv, "scale", settings.videoScaler().toUtf8().constData());
+        mpv_set_property_string(mpv, "audio-channels", settings.audioChannels().toUtf8().constData());
+    }
+    applyPlaylistPreferences();
+}
+
+void MainWindow::applyPlaylistPreferences() {
+    auto &settings = SettingsManager::instance();
+    m_playlistManager->setRepeatMode(static_cast<RepeatMode>(std::clamp(settings.repeatMode(), 0, 2)));
+    m_playlistManager->setShuffle(settings.isShuffle());
+}
+
+void MainWindow::saveResumePosition() {
+    if (m_currentFilePath.isEmpty()) return;
+    auto &settings = SettingsManager::instance();
+    // A finished (or nearly finished) file should start from the beginning next time
+    if (m_currentDuration > 0.0 && m_currentPosition > m_currentDuration - 10.0) {
+        settings.setResumePosition(m_currentFilePath, 0.0);
+    } else if (m_currentPosition > 5.0) {
+        settings.setResumePosition(m_currentFilePath, m_currentPosition);
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -89,10 +135,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     settings.setWindowMaximized(isMaximized());
     settings.setVolume(m_engine->volume());
     settings.setMuted(m_engine->isMuted());
-
-    if (!m_currentFilePath.isEmpty() && m_currentPosition > 5.0) {
-        settings.setResumePosition(m_currentFilePath, m_currentPosition);
-    }
+    saveResumePosition();
     settings.sync();
 
     QMainWindow::closeEvent(event);
@@ -128,7 +171,7 @@ void MainWindow::setupUi() {
     rootLayout->setContentsMargins(0, 0, 0, 0);
     rootLayout->setSpacing(0);
 
-    // 0. Top Slim Custom TitleBar (Real PotPlayer parity)
+    // 0. Top Slim Custom TitleBar
     m_titleBar = new TitleBar(m_centralContainer);
     connect(m_titleBar, &TitleBar::menuRequested, this, &MainWindow::showContextMenu);
     connect(m_titleBar, &TitleBar::pinToggled, this, &MainWindow::toggleStayOnTop);
@@ -169,7 +212,7 @@ void MainWindow::setupUi() {
     connect(m_videoWidget, &VideoWidget::doubleClicked, m_engine, &PlaybackEngine::togglePlayPause);
     connect(m_videoWidget, &VideoWidget::middleClicked, this, &MainWindow::toggleFullscreen);
     connect(m_videoWidget, &VideoWidget::rightClicked, this, &MainWindow::showContextMenu);
-    connect(m_videoWidget, &VideoWidget::wheelScrolled, [this](int delta) {
+    connect(m_videoWidget, &VideoWidget::wheelScrolled, this, [this](int delta) {
         int step = (delta > 0) ? 5 : -5;
         int newVol = std::clamp(m_engine->volume() + step, 0, 200);
         m_engine->setVolume(newVol);
@@ -211,7 +254,7 @@ void MainWindow::setupUi() {
     m_playPauseBtn = new QPushButton(controlBar);
     m_playPauseBtn->setFocusPolicy(Qt::NoFocus);
     m_playPauseBtn->setFixedWidth(34);
-    m_playPauseBtn->setIcon(PotIcons::playIcon(16));
+    m_playPauseBtn->setIcon(OmniIcons::playIcon(16));
     m_playPauseBtn->setIconSize(QSize(16, 16));
     m_playPauseBtn->setToolTip(QStringLiteral("Play / Pause (Space)"));
     connect(m_playPauseBtn, &QPushButton::clicked, m_engine, &PlaybackEngine::togglePlayPause);
@@ -220,7 +263,7 @@ void MainWindow::setupUi() {
     m_stopBtn = new QPushButton(controlBar);
     m_stopBtn->setFocusPolicy(Qt::NoFocus);
     m_stopBtn->setFixedWidth(28);
-    m_stopBtn->setIcon(PotIcons::stopIcon(14));
+    m_stopBtn->setIcon(OmniIcons::stopIcon(14));
     m_stopBtn->setIconSize(QSize(14, 14));
     m_stopBtn->setToolTip(QStringLiteral("Stop"));
     connect(m_stopBtn, &QPushButton::clicked, m_engine, &PlaybackEngine::stop);
@@ -229,7 +272,7 @@ void MainWindow::setupUi() {
     m_prevBtn = new QPushButton(controlBar);
     m_prevBtn->setFocusPolicy(Qt::NoFocus);
     m_prevBtn->setFixedWidth(28);
-    m_prevBtn->setIcon(PotIcons::prevIcon(14));
+    m_prevBtn->setIcon(OmniIcons::prevIcon(14));
     m_prevBtn->setIconSize(QSize(14, 14));
     m_prevBtn->setToolTip(QStringLiteral("Previous Item / Seek -5s"));
     connect(m_prevBtn, &QPushButton::clicked, [this]() {
@@ -244,7 +287,7 @@ void MainWindow::setupUi() {
     m_nextBtn = new QPushButton(controlBar);
     m_nextBtn->setFocusPolicy(Qt::NoFocus);
     m_nextBtn->setFixedWidth(28);
-    m_nextBtn->setIcon(PotIcons::nextIcon(14));
+    m_nextBtn->setIcon(OmniIcons::nextIcon(14));
     m_nextBtn->setIconSize(QSize(14, 14));
     m_nextBtn->setToolTip(QStringLiteral("Next Item / Seek +5s"));
     connect(m_nextBtn, &QPushButton::clicked, [this]() {
@@ -259,7 +302,7 @@ void MainWindow::setupUi() {
     m_openBtn = new QPushButton(controlBar);
     m_openBtn->setFocusPolicy(Qt::NoFocus);
     m_openBtn->setFixedWidth(28);
-    m_openBtn->setIcon(PotIcons::openIcon(14));
+    m_openBtn->setIcon(OmniIcons::openIcon(14));
     m_openBtn->setIconSize(QSize(14, 14));
     m_openBtn->setToolTip(QStringLiteral("Open File... (Ctrl+O)"));
     connect(m_openBtn, &QPushButton::clicked, this, &MainWindow::promptOpenFile);
@@ -308,7 +351,7 @@ void MainWindow::setupUi() {
     m_muteBtn = new QPushButton(controlBar);
     m_muteBtn->setFocusPolicy(Qt::NoFocus);
     m_muteBtn->setFixedWidth(28);
-    m_muteBtn->setIcon(PotIcons::volumeIcon(m_engine->volume(), m_engine->isMuted(), 14));
+    m_muteBtn->setIcon(OmniIcons::volumeIcon(m_engine->volume(), m_engine->isMuted(), 14));
     m_muteBtn->setIconSize(QSize(14, 14));
     m_muteBtn->setToolTip(QStringLiteral("Mute / Unmute (M)"));
     connect(m_muteBtn, &QPushButton::clicked, m_engine, &PlaybackEngine::toggleMute);
@@ -328,7 +371,7 @@ void MainWindow::setupUi() {
     m_playlistBtn->setFocusPolicy(Qt::NoFocus);
     m_playlistBtn->setCheckable(true);
     m_playlistBtn->setFixedWidth(28);
-    m_playlistBtn->setIcon(PotIcons::playlistIcon(14));
+    m_playlistBtn->setIcon(OmniIcons::playlistIcon(14));
     m_playlistBtn->setIconSize(QSize(14, 14));
     m_playlistBtn->setToolTip(QStringLiteral("Playlist Drawer (F8)"));
     connect(m_playlistBtn, &QPushButton::clicked, this, &MainWindow::togglePlaylistDrawer);
@@ -338,7 +381,7 @@ void MainWindow::setupUi() {
     m_controlBoxBtn = new QPushButton(controlBar);
     m_controlBoxBtn->setFocusPolicy(Qt::NoFocus);
     m_controlBoxBtn->setFixedWidth(28);
-    m_controlBoxBtn->setIcon(PotIcons::controlBoxIcon(14));
+    m_controlBoxBtn->setIcon(OmniIcons::controlBoxIcon(14));
     m_controlBoxBtn->setIconSize(QSize(14, 14));
     m_controlBoxBtn->setToolTip(QStringLiteral("Control Box (F6)"));
     connect(m_controlBoxBtn, &QPushButton::clicked, this, &MainWindow::toggleControlBox);
@@ -348,7 +391,7 @@ void MainWindow::setupUi() {
     m_fullscreenBtn = new QPushButton(controlBar);
     m_fullscreenBtn->setFocusPolicy(Qt::NoFocus);
     m_fullscreenBtn->setFixedWidth(28);
-    m_fullscreenBtn->setIcon(PotIcons::fullscreenIcon(isFullScreen(), 14));
+    m_fullscreenBtn->setIcon(OmniIcons::fullscreenIcon(isFullScreen(), 14));
     m_fullscreenBtn->setIconSize(QSize(14, 14));
     m_fullscreenBtn->setToolTip(QStringLiteral("Toggle Fullscreen (Enter / Middle Click)"));
     connect(m_fullscreenBtn, &QPushButton::clicked, this, &MainWindow::toggleFullscreen);
@@ -395,10 +438,10 @@ void MainWindow::setupContextMenu() {
     m_contextMenu->addSeparator();
 
     m_contextMenu->addAction(QStringLiteral("Fullscreen\tEnter"), this, &MainWindow::toggleFullscreen);
-    auto *stayOnTopAct = m_contextMenu->addAction(QStringLiteral("Always on Top"));
-    stayOnTopAct->setCheckable(true);
-    stayOnTopAct->setChecked(m_isStayOnTop);
-    connect(stayOnTopAct, &QAction::toggled, this, &MainWindow::toggleStayOnTop);
+    m_stayOnTopAct = m_contextMenu->addAction(QStringLiteral("Always on Top"));
+    m_stayOnTopAct->setCheckable(true);
+    m_stayOnTopAct->setChecked(m_isStayOnTop);
+    connect(m_stayOnTopAct, &QAction::toggled, this, &MainWindow::toggleStayOnTop);
 
     m_contextMenu->addAction(QStringLiteral("Control Box...\tF6"), this, &MainWindow::toggleControlBox);
     m_contextMenu->addAction(QStringLiteral("Preferences...\tF5"), this, &MainWindow::openPreferencesDialog);
@@ -479,11 +522,11 @@ void MainWindow::rebuildTrackMenus() {
         noneAct->setEnabled(false);
     } else {
         for (const auto &track : audioTracks) {
-            QString label = QStringLiteral("[%1] %2 (%3, %4)")
-                .arg(track.id)
-                .arg(track.title.isEmpty() ? QStringLiteral("Track %1").arg(track.id) : track.title)
-                .arg(track.language.isEmpty() ? QStringLiteral("UND") : track.language)
-                .arg(track.codec);
+            QString label = QStringLiteral("[%1] %2 (%3, %4)").arg(
+                QString::number(track.id),
+                track.title.isEmpty() ? QStringLiteral("Track %1").arg(track.id) : track.title,
+                track.language.isEmpty() ? QStringLiteral("UND") : track.language,
+                track.codec);
             auto *act = audioStreamMenu->addAction(label, [this, id = track.id]() {
                 m_engine->setAudioTrack(id);
             });
@@ -515,7 +558,8 @@ void MainWindow::rebuildTrackMenus() {
         QString filter = QStringLiteral("Audio Files (*.mp3 *.aac *.flac *.wav *.ogg *.opus *.m4a);;All Files (*.*)");
         QString path = QFileDialog::getOpenFileName(this, QStringLiteral("Load External Audio Track"), QString(), filter);
         if (!path.isEmpty() && m_engine->rawMpvHandle()) {
-            const char *cmd[] = {"audio-add", path.toUtf8().constData(), "select", nullptr};
+            const QByteArray utf8Path = path.toUtf8();
+            const char *cmd[] = {"audio-add", utf8Path.constData(), "select", nullptr};
             mpv_command(m_engine->rawMpvHandle(), cmd);
         }
     });
@@ -559,10 +603,10 @@ void MainWindow::rebuildTrackMenus() {
     const auto subTracks = m_engine->subtitleTracks();
     bool anySelected = false;
     for (const auto &track : subTracks) {
-        QString label = QStringLiteral("[%1] %2 (%3)")
-            .arg(track.id)
-            .arg(track.title.isEmpty() ? QStringLiteral("Subtitle %1").arg(track.id) : track.title)
-            .arg(track.language.isEmpty() ? QStringLiteral("UND") : track.language);
+        QString label = QStringLiteral("[%1] %2 (%3)").arg(
+            QString::number(track.id),
+            track.title.isEmpty() ? QStringLiteral("Subtitle %1").arg(track.id) : track.title,
+            track.language.isEmpty() ? QStringLiteral("UND") : track.language);
         auto *act = subStreamMenu->addAction(label, [this, id = track.id]() {
             m_engine->setSubtitleTrack(id);
         });
@@ -616,10 +660,7 @@ void MainWindow::rebuildChaptersMenu() {
     int current = m_engine->currentChapter();
     for (int i = 0; i < chapters.size(); ++i) {
         const auto &ch = chapters[i];
-        QString label = QStringLiteral("%1. %2 (%3)")
-            .arg(i + 1)
-            .arg(ch.title)
-            .arg(formatTime(ch.time));
+        QString label = QStringLiteral("%1. %2 (%3)").arg(QString::number(i + 1), ch.title, formatTime(ch.time));
         auto *act = m_chaptersMenu->addAction(label, [this, i]() {
             m_engine->setChapter(i);
         });
@@ -644,7 +685,7 @@ void MainWindow::rebuildBookmarksMenu() {
         none->setEnabled(false);
     } else {
         for (const auto &bm : bms) {
-            QString label = QStringLiteral("%1 (%2)").arg(bm.title).arg(formatTime(bm.time));
+            QString label = QStringLiteral("%1 (%2)").arg(bm.title, formatTime(bm.time));
             m_bookmarksMenu->addAction(label, [this, t = bm.time]() {
                 m_engine->seek(t, true);
             });
@@ -733,37 +774,39 @@ void MainWindow::togglePlaylistDrawer() {
     m_playlistBtn->setChecked(!isVisible);
 }
 
-void MainWindow::openMediaFile(const QString &filePath) {
+void MainWindow::openPaths(const QStringList &paths, double startSeconds) {
+    const int firstNew = m_playlistManager->count();
+    for (const QString &path : paths) {
+        m_playlistManager->addPath(path);
+    }
+    if (m_playlistManager->count() > firstNew) {
+        // setCurrentIndex emits currentItemChanged, which opens the file
+        m_pendingStart = startSeconds;
+        m_playlistManager->setCurrentIndex(firstNew);
+    }
+}
+
+void MainWindow::openMediaFile(const QString &filePath, double startSeconds) {
     if (filePath.isEmpty()) return;
 
     auto &settings = SettingsManager::instance();
-
-    // Save previous position if applicable
-    if (!m_currentFilePath.isEmpty() && m_currentPosition > 5.0) {
-        settings.setResumePosition(m_currentFilePath, m_currentPosition);
-    }
+    saveResumePosition();
 
     m_currentFilePath = filePath;
+    m_currentPosition = 0.0;
+    m_currentDuration = 0.0;
     settings.addRecentFile(filePath);
     if (m_videoWidget) {
         m_videoWidget->setIdle(false);
     }
     if (m_titleBar) {
-        m_titleBar->setTitle(QFileInfo(filePath).fileName() + QStringLiteral(" - PotPlayer"));
+        m_titleBar->setTitle(QFileInfo(filePath).fileName() + QStringLiteral(" - Omnipot"));
     }
 
-    m_engine->open(filePath);
-
-    // Auto resume if enabled
-    if (settings.rememberPlaybackPosition()) {
-        double resumeSec = settings.resumePosition(filePath);
-        if (resumeSec > 5.0) {
-            // Give mpv a short moment to load the container before seeking
-            QTimer::singleShot(200, this, [this, resumeSec]() {
-                m_engine->seek(resumeSec, true);
-            });
-        }
+    if (startSeconds < 0.0) {
+        startSeconds = settings.rememberPlaybackPosition() ? settings.resumePosition(filePath) : 0.0;
     }
+    m_engine->open(filePath, startSeconds);
 }
 
 void MainWindow::promptOpenFile() {
@@ -774,9 +817,7 @@ void MainWindow::promptOpenFile() {
         QStringLiteral("Media Files (*.mp4 *.mkv *.avi *.webm *.flv *.ts *.mp3 *.flac *.aac *.ogg *.opus *.wav);;All Files (*)")
     );
     if (!file.isEmpty()) {
-        m_playlistManager->addPath(file);
-        m_playlistManager->setCurrentIndex(m_playlistManager->count() - 1);
-        openMediaFile(file);
+        openPaths({file});
     }
 }
 
@@ -794,9 +835,7 @@ void MainWindow::promptOpenUrl() {
                 mpv_set_property_string(m_engine->rawMpvHandle(), "referrer", ref.toUtf8().constData());
             }
 
-            m_playlistManager->addPath(url);
-            m_playlistManager->setCurrentIndex(m_playlistManager->count() - 1);
-            openMediaFile(url);
+            openPaths({url});
         }
     }
 }
@@ -804,13 +843,13 @@ void MainWindow::promptOpenUrl() {
 void MainWindow::captureStillFrame() {
     QString savedPath;
     if (m_frameCapture->captureFrame(m_engine->rawMpvHandle(), QString(), QStringLiteral("png"), &savedPath)) {
-        setWindowTitle(QStringLiteral("Captured: %1 - PotPlayer Linux").arg(QFileInfo(savedPath).fileName()));
+        setWindowTitle(QStringLiteral("Captured: %1 - Omnipot").arg(QFileInfo(savedPath).fileName()));
     }
 }
 
 void MainWindow::copyFrameToClipboard() {
     if (m_frameCapture->copyFrameToClipboard(m_engine->rawMpvHandle())) {
-        setWindowTitle(QStringLiteral("Frame copied to clipboard! - PotPlayer Linux"));
+        setWindowTitle(QStringLiteral("Frame copied to clipboard! - Omnipot"));
     }
 }
 
@@ -835,7 +874,8 @@ void MainWindow::promptLoadLocalSubtitle() {
     QString filter = QStringLiteral("Subtitle Files (*.srt *.ass *.ssa *.vtt *.sub *.smi *.idx *.sup);;All Files (*.*)");
     QString path = QFileDialog::getOpenFileName(this, QStringLiteral("Load Subtitle File (Alt+O)"), QString(), filter);
     if (!path.isEmpty() && m_engine->rawMpvHandle()) {
-        const char *cmd[] = {"sub-add", path.toUtf8().constData(), "select", nullptr};
+        const QByteArray utf8Path = path.toUtf8();
+        const char *cmd[] = {"sub-add", utf8Path.constData(), "select", nullptr};
         mpv_command(m_engine->rawMpvHandle(), cmd);
         rebuildTrackMenus();
     }
@@ -857,6 +897,8 @@ void MainWindow::wheelEvent(QWheelEvent *event) {
 void MainWindow::openPreferencesDialog() {
     PreferencesDialog dlg(m_engine, this);
     dlg.exec();
+    // The dialog applies engine settings itself but has no access to the playlist
+    applyPlaylistPreferences();
 }
 
 void MainWindow::toggleFullscreen() {
@@ -868,7 +910,7 @@ void MainWindow::toggleFullscreen() {
         showFullScreen();
     }
     if (m_fullscreenBtn) {
-        m_fullscreenBtn->setIcon(PotIcons::fullscreenIcon(isFullScreen(), 14));
+        m_fullscreenBtn->setIcon(OmniIcons::fullscreenIcon(isFullScreen(), 14));
         m_fullscreenBtn->setToolTip(isFullScreen() ? QStringLiteral("Exit Fullscreen (Enter / Esc / Middle Click)") : QStringLiteral("Fullscreen (Enter / Middle Click)"));
     }
     updateWindowBorder();
@@ -894,18 +936,18 @@ void MainWindow::onStateChanged(PlaybackState state) {
         m_videoWidget->setIdle(isIdle);
     }
     if (isIdle && m_titleBar) {
-        m_titleBar->setTitle(QStringLiteral("PotPlayer Linux"));
+        m_titleBar->setTitle(QStringLiteral("Omnipot"));
     }
     switch (state) {
     case PlaybackState::Playing:
-        m_playPauseBtn->setIcon(PotIcons::pauseIcon(16));
+        m_playPauseBtn->setIcon(OmniIcons::pauseIcon(16));
         m_playPauseBtn->setToolTip(QStringLiteral("Pause (Space)"));
         break;
     case PlaybackState::Paused:
     case PlaybackState::Stopped:
     case PlaybackState::Idle:
     case PlaybackState::Error:
-        m_playPauseBtn->setIcon(PotIcons::playIcon(16));
+        m_playPauseBtn->setIcon(OmniIcons::playIcon(16));
         m_playPauseBtn->setToolTip(QStringLiteral("Play (Space)"));
         break;
     default:
@@ -941,13 +983,13 @@ void MainWindow::onVolumeChanged(int volume) {
     }
     m_volumeSlider->setToolTip(QStringLiteral("Volume: %1% (0% - 200%)").arg(volume));
     if (m_muteBtn) {
-        m_muteBtn->setIcon(PotIcons::volumeIcon(volume, m_engine->isMuted(), 14));
+        m_muteBtn->setIcon(OmniIcons::volumeIcon(volume, m_engine->isMuted(), 14));
     }
 }
 
 void MainWindow::onMuteChanged(bool muted) {
     if (m_muteBtn) {
-        m_muteBtn->setIcon(PotIcons::volumeIcon(m_engine->volume(), muted, 14));
+        m_muteBtn->setIcon(OmniIcons::volumeIcon(m_engine->volume(), muted, 14));
         m_muteBtn->setToolTip(muted ? QStringLiteral("Unmute (M)") : QStringLiteral("Mute (M)"));
     }
 }
@@ -958,7 +1000,7 @@ void MainWindow::onSpeedChanged(double /*speed*/) {
 
 void MainWindow::onMetadataChanged(const MediaMetadata &metadata) {
     if (!metadata.title.isEmpty()) {
-        QString title = QStringLiteral("%1 - PotPlayer").arg(metadata.title);
+        QString title = QStringLiteral("%1 - Omnipot").arg(metadata.title);
         setWindowTitle(title);
         if (m_titleBar) {
             m_titleBar->setTitle(title);
@@ -1000,9 +1042,13 @@ void MainWindow::updateBadges(const MediaMetadata &meta) {
     }
 
     if (meta.audioChannels > 0) {
-        m_channelsBadge->setText(meta.audioChannels == 6 ? QStringLiteral("5.1")
-                               : (meta.audioChannels == 8 ? QStringLiteral("7.1")
-                               : QStringLiteral("2.0")));
+        switch (meta.audioChannels) {
+        case 1: m_channelsBadge->setText(QStringLiteral("MONO")); break;
+        case 2: m_channelsBadge->setText(QStringLiteral("2.0")); break;
+        case 6: m_channelsBadge->setText(QStringLiteral("5.1")); break;
+        case 8: m_channelsBadge->setText(QStringLiteral("7.1")); break;
+        default: m_channelsBadge->setText(QStringLiteral("%1CH").arg(meta.audioChannels)); break;
+        }
         m_channelsBadge->show();
     } else {
         m_channelsBadge->hide();
@@ -1233,10 +1279,19 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
         toggleControlBox();
         event->accept();
         return;
-    case Qt::Key_Tab:
-        toggleInfoOverlay();
+    case Qt::Key_F1:
+        showContextMenu(m_titleBar && m_titleBar->isVisible()
+            ? m_titleBar->menuButton()->mapToGlobal(QPoint(0, m_titleBar->menuButton()->height()))
+            : QCursor::pos());
         event->accept();
         return;
+    case Qt::Key_Q:
+        if (event->modifiers() & Qt::ControlModifier) {
+            close();
+            event->accept();
+            return;
+        }
+        break;
     case Qt::Key_P:
         addBookmarkAtCurrentPosition();
         event->accept();
@@ -1334,6 +1389,10 @@ void MainWindow::toggleStayOnTop(bool enable) {
     if (m_titleBar) {
         m_titleBar->setStayOnTop(enable);
     }
+    if (m_stayOnTopAct) {
+        const QSignalBlocker blocker(m_stayOnTopAct);
+        m_stayOnTopAct->setChecked(enable);
+    }
     m_engine->showOsdText(enable ? QStringLiteral("Always on Top: Enabled") : QStringLiteral("Always on Top: Disabled"));
 }
 
@@ -1402,6 +1461,10 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
         }
     } else if (event->type() == QEvent::MouseButtonPress) {
         auto *mouseEv = static_cast<QMouseEvent*>(event);
+        if (watched == m_timeLabel && mouseEv->button() == Qt::LeftButton) {
+            toggleTimeDisplayMode();
+            return true;
+        }
         if (mouseEv->button() == Qt::LeftButton && !isMaximized() && !isFullScreen()) {
             QPoint winPos = mapFromGlobal(mouseEv->globalPosition().toPoint());
             Qt::Edges edges = calculateResizeEdges(winPos);
@@ -1433,4 +1496,4 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
     return QMainWindow::eventFilter(watched, event);
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

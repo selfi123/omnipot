@@ -2,7 +2,7 @@
 
 #include <QString>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 struct PlaylistItem {
     QString filePath;
@@ -21,4 +21,4 @@ enum class RepeatMode {
     All
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

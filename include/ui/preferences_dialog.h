@@ -12,7 +12,7 @@
 #include <QPushButton>
 #include "playback/playback_engine.h"
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class PreferencesDialog : public QDialog {
     Q_OBJECT
@@ -77,4 +77,4 @@ private:
     QPushButton *m_cancelBtn = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

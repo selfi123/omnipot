@@ -4,7 +4,7 @@
 #include <QGridLayout>
 #include <QGroupBox>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 OpenUrlDialog::OpenUrlDialog(QWidget *parent)
     : QDialog(parent)
@@ -78,4 +78,4 @@ QString OpenUrlDialog::referrer() const {
     return m_referrerEdit->text().trimmed();
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

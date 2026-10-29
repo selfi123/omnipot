@@ -4,7 +4,7 @@
 #include <QList>
 #include <QString>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class DplParser {
 public:
@@ -12,4 +12,4 @@ public:
     static bool save(const QString &filePath, const QList<PlaylistItem> &items, const QString &currentPlaying = QString(), double playtime = 0.0);
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

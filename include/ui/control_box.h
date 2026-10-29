@@ -9,7 +9,7 @@
 #include <QComboBox>
 #include "playback/playback_engine.h"
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class ControlBoxDialog : public QDialog {
     Q_OBJECT
@@ -72,4 +72,4 @@ private:
     QLabel *m_hueVal = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

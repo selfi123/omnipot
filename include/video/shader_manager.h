@@ -5,7 +5,7 @@
 #include <QMap>
 #include <mpv/client.h>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class ShaderManager {
 public:
@@ -29,4 +29,4 @@ private:
     QStringList m_activeShaders;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

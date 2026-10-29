@@ -5,7 +5,7 @@
 #include <QTimer>
 #include <mpv/client.h>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class FrameCapture : public QObject {
     Q_OBJECT
@@ -44,4 +44,4 @@ private:
     QTimer *m_consecutiveTimer = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

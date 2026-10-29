@@ -10,13 +10,13 @@
 #include <QHeaderView>
 #include <mpv/client.h>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 PreferencesDialog::PreferencesDialog(PlaybackEngine *engine, QWidget *parent)
     : QDialog(parent)
     , m_engine(engine)
 {
-    setWindowTitle(QStringLiteral("Preferences (F5) - PotPlayer Linux"));
+    setWindowTitle(QStringLiteral("Preferences (F5) - Omnipot"));
     resize(740, 500);
     setStyleSheet(QStringLiteral(
         "QDialog { background-color: #1e1e1e; color: #e0e0e0; font-family: 'Segoe UI', 'Ubuntu', sans-serif; font-size: 12px; }"
@@ -272,7 +272,7 @@ QWidget* PreferencesDialog::createDiagnosticsPage() {
     if (m_engine) {
         auto stats = m_engine->streamStats();
         QString text = QStringLiteral(
-            "[System] Native PotPlayer Linux Platform Engine initialized.\n"
+            "[System] Omnipot platform engine initialized.\n"
             "[Engine] libmpv dynamic link verified.\n"
             "[Video Codec] %1\n"
             "[Audio Codec] %2\n"
@@ -400,7 +400,7 @@ void PreferencesDialog::resetDefaults() {
     auto reply = QMessageBox::question(
         this,
         QStringLiteral("Reset Settings"),
-        QStringLiteral("Are you sure you want to restore all PotPlayer settings to default?"),
+        QStringLiteral("Are you sure you want to restore all Omnipot settings to default?"),
         QMessageBox::Yes | QMessageBox::No
     );
 
@@ -435,4 +435,4 @@ void PreferencesDialog::importPresets() {
     }
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

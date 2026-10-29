@@ -7,7 +7,7 @@
 #include <QSortFilterProxyModel>
 #include "playlist/playlist_manager.h"
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class PlaylistDrawer : public QWidget {
     Q_OBJECT
@@ -39,6 +39,7 @@ private Q_SLOTS:
 private:
     void setupUi();
     void updateHeader();
+    void syncModeButtons();
 
     PlaylistManager *m_manager = nullptr;
     QSortFilterProxyModel *m_proxyModel = nullptr;
@@ -53,4 +54,4 @@ private:
     QPushButton *m_saveLoadBtn = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

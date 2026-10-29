@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Omnipot application icon. Original artwork, GPL-3.0-or-later. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#243156"/>
+      <stop offset="1" stop-color="#0D1324"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2DD4BF"/>
+      <stop offset="1" stop-color="#0F8F8A"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Tile -->
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#bg)"/>
+
+  <!-- Steam -->
+  <g fill="none" stroke="#FB7185" stroke-width="24" stroke-linecap="round">
+    <path d="M196 188 C176 164 216 148 196 116"/>
+    <path d="M256 188 C236 164 276 148 256 104"/>
+    <path d="M316 188 C296 164 336 148 316 116"/>
+  </g>
+
+  <!-- Handles -->
+  <rect x="64" y="262" width="72" height="34" rx="17" fill="#0F8F8A"/>
+  <rect x="376" y="262" width="72" height="34" rx="17" fill="#0F8F8A"/>
+
+  <!-- Pot body and rim -->
+  <path d="M116 240 H396 V300 C396 384 336 428 256 428 C176 428 116 384 116 300 Z" fill="url(#body)"/>
+  <rect x="96" y="214" width="320" height="42" rx="21" fill="#5EEAD4"/>
+
+  <!-- Play mark -->
+  <path d="M232 290 L232 378 L304 334 Z" fill="#F8FAFC" stroke="#F8FAFC" stroke-width="16" stroke-linejoin="round"/>
+</svg>

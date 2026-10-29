@@ -5,7 +5,7 @@
 #include <QTimer>
 #include <memory>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class MpvEngine : public PlaybackEngine {
     Q_OBJECT
@@ -61,7 +61,7 @@ public:
     mpv_handle* rawMpvHandle() const override { return m_mpv; }
 
 public Q_SLOTS:
-    void open(const QString &url) override;
+    void open(const QString &url, double startSeconds = 0.0) override;
     void play() override;
     void pause() override;
     void stop() override;
@@ -180,7 +180,9 @@ private:
     double m_loopA = -1.0;
     double m_loopB = -1.0;
 
+    double m_pendingStart = 0.0;
+
     QTimer *m_eventTimer = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

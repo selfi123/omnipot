@@ -4,8 +4,9 @@
 #include <QFileInfo>
 #include <algorithm>
 #include <clocale>
+#include <cstring>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 void MpvEngine::onMpvWakeup(void *ctx) {
     auto *self = static_cast<MpvEngine*>(ctx);
@@ -37,10 +38,10 @@ bool MpvEngine::initialize() {
         return false;
     }
 
-    // Sensible defaults matching modern PotPlayer behavior
+    // Sensible defaults for a desktop media player
     mpv_set_option_string(m_mpv, "config", "no");
     mpv_set_option_string(m_mpv, "terminal", "yes");
-    mpv_set_option_string(m_mpv, "msg-level", "all=v");
+    mpv_set_option_string(m_mpv, "msg-level", "all=warn");
     mpv_set_option_string(m_mpv, "hwdec", "auto-safe");
     mpv_set_option_string(m_mpv, "vo", "libmpv");
     mpv_set_option_string(m_mpv, "keep-open", "always");
@@ -98,6 +99,9 @@ bool MpvEngine::initialize() {
     mpv_observe_property(m_mpv, 0, "deinterlace", MPV_FORMAT_FLAG);
     mpv_observe_property(m_mpv, 0, "audio-delay", MPV_FORMAT_DOUBLE);
     mpv_observe_property(m_mpv, 0, "sub-delay", MPV_FORMAT_DOUBLE);
+    mpv_observe_property(m_mpv, 0, "audio-params/channel-count", MPV_FORMAT_INT64);
+    mpv_observe_property(m_mpv, 0, "video-params/gamma", MPV_FORMAT_STRING);
+    mpv_observe_property(m_mpv, 0, "container-fps", MPV_FORMAT_DOUBLE);
 
     setState(PlaybackState::Idle);
     return true;
@@ -121,8 +125,11 @@ void MpvEngine::setWid(int64_t wid) {
     }
 }
 
-void MpvEngine::open(const QString &url) {
+void MpvEngine::open(const QString &url, double startSeconds) {
     if (!m_mpv) return;
+
+    // Applied once the file is loaded; seeking before that is rejected by mpv
+    m_pendingStart = startSeconds;
 
     setState(PlaybackState::Opening);
     m_position = 0.0;
@@ -134,6 +141,10 @@ void MpvEngine::open(const QString &url) {
     m_metadata.filename = QFileInfo(url).fileName();
     m_metadata.title = m_metadata.filename;
     Q_EMIT metadataChanged(m_metadata);
+
+    // A newly opened file should play even if the previous one was paused
+    int unpause = 0;
+    mpv_set_property(m_mpv, "pause", MPV_FORMAT_FLAG, &unpause);
 
     const QByteArray utf8Url = url.toUtf8();
     const char *cmd[] = {"loadfile", utf8Url.constData(), nullptr};
@@ -171,8 +182,8 @@ void MpvEngine::seek(double seconds, bool exact) {
     if (!m_mpv) return;
     const QString secStr = QString::number(std::max(0.0, seconds), 'f', 3);
     const QByteArray utf8Sec = secStr.toUtf8();
-    const char *mode = exact ? "exact" : "relative";
-    const char *cmd[] = {"seek", utf8Sec.constData(), "absolute", mode, nullptr};
+    const char *flags = exact ? "absolute+exact" : "absolute+keyframes";
+    const char *cmd[] = {"seek", utf8Sec.constData(), flags, nullptr};
     mpv_command_async(m_mpv, 0, cmd);
 }
 
@@ -311,11 +322,18 @@ void MpvEngine::handleMpvEvent(mpv_event *event) {
         setState(PlaybackState::Opening);
         break;
 
-    case MPV_EVENT_FILE_LOADED:
-        setState(PlaybackState::Playing);
+    case MPV_EVENT_FILE_LOADED: {
+        int paused = 0;
+        mpv_get_property(m_mpv, "pause", MPV_FORMAT_FLAG, &paused);
+        setState(paused ? PlaybackState::Paused : PlaybackState::Playing);
         updateTrackList();
         updateChapterList();
+        if (m_pendingStart > 0.0) {
+            seek(m_pendingStart, true);
+            m_pendingStart = 0.0;
+        }
         break;
+    }
 
     case MPV_EVENT_END_FILE: {
         auto *endData = static_cast<mpv_event_end_file*>(event->data);
@@ -392,8 +410,16 @@ void MpvEngine::handlePropertyChange(mpv_event_property *prop) {
     } else if (name == "height" && prop->format == MPV_FORMAT_INT64) {
         m_metadata.videoHeight = static_cast<int>(*static_cast<int64_t*>(prop->data));
         Q_EMIT metadataChanged(m_metadata);
-    } else if (name == "track-list") {
-        updateTrackList();
+    } else if (name == "audio-params/channel-count" && prop->format == MPV_FORMAT_INT64) {
+        m_metadata.audioChannels = static_cast<int>(*static_cast<int64_t*>(prop->data));
+        Q_EMIT metadataChanged(m_metadata);
+    } else if (name == "video-params/gamma" && prop->format == MPV_FORMAT_STRING) {
+        const char *gamma = *static_cast<char**>(prop->data);
+        m_metadata.isHdr = gamma && (strcmp(gamma, "pq") == 0 || strcmp(gamma, "hlg") == 0);
+        Q_EMIT metadataChanged(m_metadata);
+    } else if (name == "container-fps" && prop->format == MPV_FORMAT_DOUBLE) {
+        m_metadata.fps = *static_cast<double*>(prop->data);
+        Q_EMIT metadataChanged(m_metadata);
     } else if (name == "chapter-list") {
         updateChapterList();
     } else if (name == "chapter" && prop->format == MPV_FORMAT_INT64) {
@@ -614,7 +640,7 @@ void MpvEngine::applyAudioFilters() {
     QStringList filters;
 
     if (m_normalizerEnabled) {
-        // High-fidelity dynamic range normalizer (PotPlayer Normalizer parity)
+        // High-fidelity dynamic range normalizer
         // Boosts quiet dialogue up to +20dB while preventing clipping on peaks
         filters << QStringLiteral("dynaudnorm=f=75:g=25:p=0.95:m=10.0:r=0.9");
     }
@@ -838,4 +864,4 @@ void MpvEngine::setAudioDevice(const QString &device) {
     }
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

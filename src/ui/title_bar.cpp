@@ -1,10 +1,10 @@
 #include "ui/title_bar.h"
-#include "ui/pot_icons.h"
+#include "ui/omni_icons.h"
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QWindow>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 TitleBar::TitleBar(QWidget *parent)
     : QWidget(parent)
@@ -34,8 +34,8 @@ void TitleBar::setupUi() {
     layout->setContentsMargins(4, 0, 0, 0);
     layout->setSpacing(0);
 
-    // Left: "PotPlayer ▾" main menu button
-    m_menuBtn = new QPushButton(QStringLiteral("PotPlayer ▾"), this);
+    // Left: "Omnipot ▾" main menu button
+    m_menuBtn = new QPushButton(QStringLiteral("Omnipot ▾"), this);
     m_menuBtn->setObjectName(QStringLiteral("titleMenuBtn"));
     m_menuBtn->setFocusPolicy(Qt::NoFocus);
     m_menuBtn->setToolTip(QStringLiteral("Main Menu (F1 / Right Click)"));
@@ -45,22 +45,23 @@ void TitleBar::setupUi() {
     layout->addWidget(m_menuBtn);
 
     // Center: Draggable Title Label
-    m_titleLabel = new QLabel(QStringLiteral("PotPlayer Linux"), this);
+    m_titleLabel = new QLabel(QStringLiteral("Omnipot"), this);
     m_titleLabel->setObjectName(QStringLiteral("titleLabel"));
+    m_titleLabel->setTextFormat(Qt::PlainText); // titles come from media metadata
     m_titleLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
     layout->addWidget(m_titleLabel, 1);
 
     // Right: Window action buttons
     m_pinBtn = new QPushButton(this);
     m_pinBtn->setObjectName(QStringLiteral("titleWinBtn"));
-    m_pinBtn->setIcon(PotIcons::pinIcon(m_isPinned, 14));
+    m_pinBtn->setIcon(OmniIcons::pinIcon(m_isPinned, 14));
     m_pinBtn->setIconSize(QSize(14, 14));
     m_pinBtn->setCheckable(true);
     m_pinBtn->setFocusPolicy(Qt::NoFocus);
     m_pinBtn->setToolTip(QStringLiteral("Always on Top"));
     connect(m_pinBtn, &QPushButton::toggled, this, [this](bool checked) {
         m_isPinned = checked;
-        m_pinBtn->setIcon(PotIcons::pinIcon(checked, 14));
+        m_pinBtn->setIcon(OmniIcons::pinIcon(checked, 14));
         Q_EMIT pinToggled(checked);
     });
     layout->addWidget(m_pinBtn);
@@ -89,7 +90,7 @@ void TitleBar::setupUi() {
 
 void TitleBar::setTitle(const QString &title) {
     if (m_titleLabel) {
-        m_titleLabel->setText(title.isEmpty() ? QStringLiteral("PotPlayer Linux") : title);
+        m_titleLabel->setText(title.isEmpty() ? QStringLiteral("Omnipot") : title);
     }
 }
 
@@ -105,7 +106,7 @@ void TitleBar::setStayOnTop(bool onTop) {
     if (m_pinBtn) {
         m_pinBtn->blockSignals(true);
         m_pinBtn->setChecked(onTop);
-        m_pinBtn->setIcon(PotIcons::pinIcon(onTop, 14));
+        m_pinBtn->setIcon(OmniIcons::pinIcon(onTop, 14));
         m_pinBtn->blockSignals(false);
     }
 }
@@ -134,5 +135,5 @@ void TitleBar::mouseDoubleClickEvent(QMouseEvent *event) {
     QWidget::mouseDoubleClickEvent(event);
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot
 

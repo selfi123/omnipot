@@ -4,7 +4,7 @@
 #include <QLabel>
 #include <QPushButton>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class TitleBar : public QWidget {
     Q_OBJECT
@@ -48,5 +48,5 @@ private:
     bool m_isPinned = false;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot
 

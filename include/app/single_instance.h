@@ -5,7 +5,7 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class MainWindow;
 
@@ -32,4 +32,4 @@ private:
     MainWindow *m_mainWindow = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

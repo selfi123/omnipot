@@ -6,7 +6,7 @@
 
 struct mpv_handle;
 
-namespace PotPlayer {
+namespace Omnipot {
 
 enum class PlaybackState {
     Idle,
@@ -30,7 +30,7 @@ struct MediaMetadata {
     double duration = 0.0;
     bool isHardwareDecoded = false;
     bool isHdr = false;
-    int audioChannels = 2;
+    int audioChannels = 0; // 0 = unknown / no audio
     int audioSampleRate = 44100;
 };
 
@@ -124,7 +124,7 @@ public:
     virtual mpv_handle* rawMpvHandle() const { return nullptr; }
 
 public Q_SLOTS:
-    virtual void open(const QString &url) = 0;
+    virtual void open(const QString &url, double startSeconds = 0.0) = 0;
     virtual void play() = 0;
     virtual void pause() = 0;
     virtual void stop() = 0;
@@ -185,13 +185,13 @@ public Q_SLOTS:
     virtual void clearLoop() = 0;
 
 Q_SIGNALS:
-    void stateChanged(PotPlayer::PlaybackState state);
+    void stateChanged(Omnipot::PlaybackState state);
     void positionChanged(double seconds);
     void durationChanged(double seconds);
     void volumeChanged(int volume);
     void muteChanged(bool muted);
     void speedChanged(double speed);
-    void metadataChanged(const PotPlayer::MediaMetadata &metadata);
+    void metadataChanged(const Omnipot::MediaMetadata &metadata);
     void tracksChanged();
     void chaptersChanged();
     void colorsChanged();
@@ -200,4 +200,4 @@ Q_SIGNALS:
     void eofReached();
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

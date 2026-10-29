@@ -4,7 +4,7 @@
 #include <QList>
 #include <QString>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class M3uParser {
 public:
@@ -12,4 +12,4 @@ public:
     static bool save(const QString &filePath, const QList<PlaylistItem> &items);
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

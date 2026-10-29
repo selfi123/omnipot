@@ -4,14 +4,16 @@
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QKeyEvent>
+#include <QSignalBlocker>
+#include <vector>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 ControlBoxDialog::ControlBoxDialog(PlaybackEngine *engine, QWidget *parent)
     : QDialog(parent, Qt::Tool | Qt::WindowCloseButtonHint)
     , m_engine(engine)
 {
-    setWindowTitle(QStringLiteral("Control - PotPlayer"));
+    setWindowTitle(QStringLiteral("Control - Omnipot"));
     setFixedWidth(380);
     setupUi();
 
@@ -454,6 +456,18 @@ QWidget* ControlBoxDialog::createColorTab() {
 void ControlBoxDialog::syncFromEngine() {
     if (!m_engine) return;
 
+    // Reflect engine state without feeding it back: every slider/checkbox signal would call
+    // the engine again, and each equalizer change rebuilds mpv's audio filter chain (audible gap)
+    std::vector<QSignalBlocker> blockers;
+    for (QObject *w : std::initializer_list<QObject*>{
+             m_hflipCheck, m_vflipCheck, m_deinterlaceCheck, m_eqCheck, m_subSizeSlider, m_subPosSlider,
+             m_assOverrideCheck, m_brightnessSlider, m_contrastSlider, m_saturationSlider, m_hueSlider}) {
+        blockers.emplace_back(w);
+    }
+    for (auto *slider : m_eqSliders) {
+        blockers.emplace_back(slider);
+    }
+
     // Speed
     m_speedLabel->setText(QStringLiteral("%1x").arg(m_engine->speed(), 0, 'f', 2));
 
@@ -531,4 +545,4 @@ void ControlBoxDialog::keyPressEvent(QKeyEvent *event) {
     QDialog::keyPressEvent(event);
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

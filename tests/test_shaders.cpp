@@ -1,18 +1,22 @@
 #include <QTest>
 #include <QDir>
 #include <QFile>
+#include <QStandardPaths>
 #include "video/shader_manager.h"
+#include "config/settings_manager.h"
 
 class TestShaders : public QObject {
     Q_OBJECT
 
 private Q_SLOTS:
     void initTestCase() {
-        PotPlayer::ShaderManager::instance().initialize();
+        // Keep test files out of the developer's real ~/.config
+        QStandardPaths::setTestModeEnabled(true);
+        Omnipot::ShaderManager::instance().initialize();
     }
 
     void testDefaultShadersExist() {
-        auto &sm = PotPlayer::ShaderManager::instance();
+        auto &sm = Omnipot::ShaderManager::instance();
         const QStringList available = sm.availableShaders();
 
         QVERIFY(available.contains(QStringLiteral("Invert")));
@@ -25,7 +29,7 @@ private Q_SLOTS:
     }
 
     void testShaderTogglingAndClear() {
-        auto &sm = PotPlayer::ShaderManager::instance();
+        auto &sm = Omnipot::ShaderManager::instance();
         sm.clearActiveShaders(nullptr);
 
         QVERIFY(sm.activeShaders().isEmpty());
@@ -52,7 +56,7 @@ private Q_SLOTS:
     }
 
     void testShaderFileContent() {
-        QString shaderDir = QDir::homePath() + QStringLiteral("/.config/potplayer-linux/shaders");
+        QString shaderDir = Omnipot::SettingsManager::configDirectory() + QStringLiteral("/shaders");
         QFile file(shaderDir + QStringLiteral("/Invert.glsl"));
         QVERIFY(file.exists());
         QVERIFY(file.open(QIODevice::ReadOnly | QIODevice::Text));

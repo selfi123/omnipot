@@ -5,7 +5,7 @@
 #include <QRegularExpression>
 #include <QMap>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 QList<PlaylistItem> DplParser::load(const QString &filePath, QString *outCurrentPlaying, double *outPlaytime) {
     QList<PlaylistItem> items;
@@ -113,4 +113,4 @@ bool DplParser::save(const QString &filePath, const QList<PlaylistItem> &items, 
     return true;
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

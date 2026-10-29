@@ -5,7 +5,7 @@
 #include <QFileDialog>
 #include <QGroupBox>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 ConsecutiveCaptureDialog::ConsecutiveCaptureDialog(FrameCapture *capture, mpv_handle *mpv, QWidget *parent)
     : QDialog(parent)
@@ -147,4 +147,4 @@ void ConsecutiveCaptureDialog::onError(const QString &errorMessage) {
     m_statusLabel->setText(QStringLiteral("Error: ") + errorMessage);
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot
