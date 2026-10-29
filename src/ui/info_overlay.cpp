@@ -3,7 +3,7 @@
 #include <QPainter>
 #include <QPainterPath>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 InfoOverlay::InfoOverlay(PlaybackEngine *engine, QWidget *parent)
     : QWidget(parent)
@@ -63,7 +63,7 @@ void InfoOverlay::updateStats() {
 
     QString hwText = s.hwdec.isEmpty() || s.hwdec == QStringLiteral("no")
         ? QStringLiteral("<span style='color:#FFB300;'>Software (CPU)</span>")
-        : QStringLiteral("<span style='color:#00E676;'>Hardware (%1)</span>").arg(s.hwdec.toUpper());
+        : QStringLiteral("<span style='color:#00E676;'>Hardware (%1)</span>").arg(s.hwdec.toUpper().toHtmlEscaped());
 
     auto formatTime = [](double sec) {
         int total = static_cast<int>(sec);
@@ -76,7 +76,7 @@ void InfoOverlay::updateStats() {
 
     QString html = QStringLiteral(
         "<div style='line-height: 140%;'>"
-        "<span style='color:#FFFFFF; font-size:12px;'>[ POTPLAYER STREAM DIAGNOSTICS ]</span><br>"
+        "<span style='color:#FFFFFF; font-size:12px;'>[ OMNIPOT STREAM DIAGNOSTICS ]</span><br>"
         "<span style='color:#888888;'>Title:</span> <span style='color:#FFFFFF;'>%1</span><br>"
         "<span style='color:#888888;'>Time:</span> <span style='color:#FFFFFF;'>%2 / %3</span> "
         "(Speed: %4x)<br>"
@@ -96,28 +96,30 @@ void InfoOverlay::updateStats() {
         "<hr style='border: 0; border-top: 1px solid #333333; margin: 4px 0;'>"
         "<span style='color:#69F0AE;'>[ Performance & Sync ]</span><br>"
         "&nbsp;&nbsp;Dropped Frames: <span style='color:#FFFFFF;'>%15</span><br>"
-        "&nbsp;&nbsp;A-V Sync Diff: <span style='color:#FFFFFF;'>%+16.6f s</span>"
+        "&nbsp;&nbsp;A-V Sync Diff: <span style='color:#FFFFFF;'>%16 s</span>"
         "</div>"
-    )
-    .arg(m.title.isEmpty() ? m.filename : m.title)
-    .arg(formatTime(m_engine->position()))
-    .arg(formatTime(m_engine->duration()))
-    .arg(m_engine->speed(), 0, 'f', 2)
-    .arg(s.videoCodec.isEmpty() ? QStringLiteral("N/A") : s.videoCodec)
-    .arg(s.videoWidth)
-    .arg(s.videoHeight)
-    .arg(s.fps, 0, 'f', 3)
-    .arg(s.videoBitrate / 1000)
-    .arg(hwText)
-    .arg(s.audioCodec.isEmpty() ? QStringLiteral("N/A") : s.audioCodec)
-    .arg(s.audioChannels)
-    .arg(s.audioSampleRate)
-    .arg(s.audioBitrate / 1000)
-    .arg(s.droppedFrames)
-    .arg(s.avSyncDiff);
+    // One multi-arg call: chained .arg() would re-substitute "%N" sequences found inside a title.
+    // Values from the media file are escaped because the label renders rich text.
+    ).arg(
+        (m.title.isEmpty() ? m.filename : m.title).toHtmlEscaped(),
+        formatTime(m_engine->position()),
+        formatTime(m_engine->duration()),
+        QString::number(m_engine->speed(), 'f', 2),
+        s.videoCodec.isEmpty() ? QStringLiteral("N/A") : s.videoCodec.toHtmlEscaped(),
+        QString::number(s.videoWidth),
+        QString::number(s.videoHeight),
+        QString::number(s.fps, 'f', 3),
+        QString::number(s.videoBitrate / 1000),
+        hwText,
+        s.audioCodec.isEmpty() ? QStringLiteral("N/A") : s.audioCodec.toHtmlEscaped(),
+        QString::number(s.audioChannels),
+        QString::number(s.audioSampleRate),
+        QString::number(s.audioBitrate / 1000),
+        QString::number(s.droppedFrames),
+        QStringLiteral("%1%2").arg(s.avSyncDiff >= 0.0 ? QStringLiteral("+") : QString(), QString::number(s.avSyncDiff, 'f', 6)));
 
     m_textLabel->setText(html);
     adjustSize();
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

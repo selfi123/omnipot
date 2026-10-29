@@ -8,7 +8,7 @@
 struct mpv_handle;
 struct mpv_render_context;
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class VideoWidget : public QOpenGLWidget {
     Q_OBJECT
@@ -60,4 +60,4 @@ private:
     std::vector<float> m_peaks;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

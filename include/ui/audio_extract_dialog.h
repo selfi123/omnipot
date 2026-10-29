@@ -8,7 +8,7 @@
 #include <QPushButton>
 #include <QProcess>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class AudioExtractDialog : public QDialog {
     Q_OBJECT
@@ -41,4 +41,4 @@ private:
     QPushButton *m_cancelBtn = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

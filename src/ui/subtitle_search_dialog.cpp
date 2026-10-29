@@ -20,7 +20,15 @@
 #include <zlib.h>
 #include <cstring>
 
-namespace PotPlayer {
+namespace Omnipot {
+
+// URLs in search results come from the server; only follow plain web links
+static bool isWebUrl(const QUrl &url) {
+    return url.isValid() && (url.scheme() == QStringLiteral("https") || url.scheme() == QStringLiteral("http"));
+}
+
+// Subtitles are small; anything bigger than this after inflating is not a subtitle
+static constexpr qsizetype kMaxSubtitleBytes = 16 * 1024 * 1024;
 
 QString SubtitleSearchDialog::cleanMediaTitle(const QString &rawTitle) {
     QString title = QFileInfo(rawTitle).completeBaseName();
@@ -74,6 +82,10 @@ QByteArray SubtitleSearchDialog::decompressGzip(const QByteArray &data) {
         }
         int have = sizeof(buffer) - strm.avail_out;
         decompressed.append(buffer, have);
+        if (decompressed.size() > kMaxSubtitleBytes) {
+            inflateEnd(&strm);
+            return QByteArray(); // Refuse decompression bombs
+        }
     }
 
     inflateEnd(&strm);
@@ -402,7 +414,8 @@ void SubtitleSearchDialog::downloadSubtitle(const SubtitleSearchResult &sub, std
         return;
     }
 
-    if (sub.downloadUrl.isEmpty()) {
+    if (!isWebUrl(QUrl(sub.downloadUrl))) {
+        m_statusLabel->setText(QStringLiteral("Refusing to download from a non-web URL."));
         if (onComplete) onComplete(QString(), false);
         return;
     }
@@ -433,6 +446,11 @@ void SubtitleSearchDialog::downloadSubtitle(const SubtitleSearchResult &sub, std
         }
 
         QByteArray decompressed = decompressGzip(rawData);
+        if (decompressed.isEmpty() || decompressed.size() > kMaxSubtitleBytes) {
+            m_statusLabel->setText(QStringLiteral("Downloaded subtitle is too large or corrupt."));
+            if (onComplete) onComplete(QString(), false);
+            return;
+        }
 
         QFile outFile(targetPath);
         if (!outFile.open(QIODevice::WriteOnly)) {
@@ -508,8 +526,9 @@ void SubtitleSearchDialog::openSubtitleWebpage() {
     }
 
     const auto &sub = m_currentResults[row];
-    if (!sub.webUrl.isEmpty()) {
-        QDesktopServices::openUrl(QUrl(sub.webUrl));
+    const QUrl webUrl(sub.webUrl);
+    if (isWebUrl(webUrl)) {
+        QDesktopServices::openUrl(webUrl);
     } else {
         m_statusLabel->setText(QStringLiteral("No webpage available for this item."));
     }
@@ -599,4 +618,4 @@ void SubtitleSearchDialog::loadSubtitleIntoMpv(const QString &subtitlePath, bool
     }
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

@@ -5,13 +5,16 @@
 #include <QStringList>
 #include <QByteArray>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class SettingsManager : public QObject {
     Q_OBJECT
 
 public:
     static SettingsManager& instance();
+
+    // $XDG_CONFIG_HOME/omnipot — holds config.ini and the shaders folder
+    static QString configDirectory();
 
     void load();
     void sync();
@@ -92,4 +95,4 @@ private:
     std::unique_ptr<QSettings> m_settings;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

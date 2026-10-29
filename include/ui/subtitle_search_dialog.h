@@ -10,7 +10,7 @@
 #include <functional>
 #include <mpv/client.h>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 struct SubtitleSearchResult {
     QString language;
@@ -73,4 +73,4 @@ private:
     QList<SubtitleSearchResult> m_currentResults;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

@@ -1,17 +1,17 @@
-#include "ui/pot_icons.h"
+#include "ui/omni_icons.h"
 #include <QPainter>
 #include <QPainterPath>
 #include <QPolygonF>
 #include <QRectF>
 #include <cmath>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
-QPixmap PotIcons::renderPixmap(int size, const DrawFunc &drawFunc, const QColor &color) {
+QPixmap OmniIcons::renderPixmap(int size, const DrawFunc &drawFunc, const QColor &color) {
     const int scale = 2; // Supersample 2x for sharp rendering
     QPixmap pix(size * scale, size * scale);
     pix.fill(Qt::transparent);
@@ -27,7 +27,7 @@ QPixmap PotIcons::renderPixmap(int size, const DrawFunc &drawFunc, const QColor 
     return pix;
 }
 
-QIcon PotIcons::buildIcon(int size, const DrawFunc &drawFunc,
+QIcon OmniIcons::buildIcon(int size, const DrawFunc &drawFunc,
                           const QColor &normalColor,
                           const QColor &hoverColor) {
     QIcon icon;
@@ -38,7 +38,7 @@ QIcon PotIcons::buildIcon(int size, const DrawFunc &drawFunc,
     return icon;
 }
 
-QIcon PotIcons::playIcon(int size) {
+QIcon OmniIcons::playIcon(int size) {
     auto draw = [](QPainter &p, const QRectF &r, const QColor &c) {
         p.setPen(Qt::NoPen);
         p.setBrush(c);
@@ -53,7 +53,7 @@ QIcon PotIcons::playIcon(int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::pauseIcon(int size) {
+QIcon OmniIcons::pauseIcon(int size) {
     auto draw = [](QPainter &p, const QRectF &r, const QColor &c) {
         p.setPen(Qt::NoPen);
         p.setBrush(c);
@@ -67,7 +67,7 @@ QIcon PotIcons::pauseIcon(int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::stopIcon(int size) {
+QIcon OmniIcons::stopIcon(int size) {
     auto draw = [](QPainter &p, const QRectF &r, const QColor &c) {
         p.setPen(Qt::NoPen);
         p.setBrush(c);
@@ -80,7 +80,7 @@ QIcon PotIcons::stopIcon(int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::prevIcon(int size) {
+QIcon OmniIcons::prevIcon(int size) {
     auto draw = [](QPainter &p, const QRectF &r, const QColor &c) {
         p.setPen(Qt::NoPen);
         p.setBrush(c);
@@ -98,7 +98,7 @@ QIcon PotIcons::prevIcon(int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::nextIcon(int size) {
+QIcon OmniIcons::nextIcon(int size) {
     auto draw = [](QPainter &p, const QRectF &r, const QColor &c) {
         p.setPen(Qt::NoPen);
         p.setBrush(c);
@@ -116,7 +116,7 @@ QIcon PotIcons::nextIcon(int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::openIcon(int size) {
+QIcon OmniIcons::openIcon(int size) {
     auto draw = [](QPainter &p, const QRectF &r, const QColor &c) {
         p.setPen(Qt::NoPen);
         p.setBrush(c);
@@ -134,7 +134,7 @@ QIcon PotIcons::openIcon(int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::volumeIcon(int volume, bool muted, int size) {
+QIcon OmniIcons::volumeIcon(int volume, bool muted, int size) {
     auto draw = [volume, muted](QPainter &p, const QRectF &r, const QColor &c) {
         p.setPen(Qt::NoPen);
         p.setBrush(c);
@@ -176,7 +176,7 @@ QIcon PotIcons::volumeIcon(int volume, bool muted, int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::playlistIcon(int size) {
+QIcon OmniIcons::playlistIcon(int size) {
     auto draw = [](QPainter &p, const QRectF &r, const QColor &c) {
         p.setPen(Qt::NoPen);
         p.setBrush(c);
@@ -191,7 +191,7 @@ QIcon PotIcons::playlistIcon(int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::controlBoxIcon(int size) {
+QIcon OmniIcons::controlBoxIcon(int size) {
     auto draw = [](QPainter &p, const QRectF &r, const QColor &c) {
         qreal s = r.width();
         QPointF center(s / 2.0, s / 2.0);
@@ -231,7 +231,7 @@ QIcon PotIcons::controlBoxIcon(int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::fullscreenIcon(bool isFullscreen, int size) {
+QIcon OmniIcons::fullscreenIcon(bool isFullscreen, int size) {
     auto draw = [isFullscreen](QPainter &p, const QRectF &r, const QColor &c) {
         qreal s = r.width();
         QPen pen(c, s * 0.09, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin);
@@ -275,7 +275,7 @@ QIcon PotIcons::fullscreenIcon(bool isFullscreen, int size) {
     return buildIcon(size, draw);
 }
 
-QIcon PotIcons::pinIcon(bool isPinned, int size) {
+QIcon OmniIcons::pinIcon(bool isPinned, int size) {
     auto draw = [isPinned](QPainter &p, const QRectF &r, const QColor &c) {
         qreal s = r.width();
         QColor color = isPinned ? QColor(0xF0, 0xA0, 0x20) : c;
@@ -305,5 +305,5 @@ QIcon PotIcons::pinIcon(bool isPinned, int size) {
     return buildIcon(size, draw);
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot
 

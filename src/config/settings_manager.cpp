@@ -2,8 +2,19 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QFileInfo>
+#include <QCryptographicHash>
 
-namespace PotPlayer {
+namespace Omnipot {
+
+// Per-file keys must survive restarts and Qt upgrades, which qHash() does not guarantee
+static QString fileKey(const QString &group, const QString &filePath) {
+    const QByteArray digest = QCryptographicHash::hash(filePath.toUtf8(), QCryptographicHash::Sha1);
+    return group + QLatin1Char('/') + QString::fromLatin1(digest.toHex().left(16));
+}
+
+QString SettingsManager::configDirectory() {
+    return QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation) + QStringLiteral("/omnipot");
+}
 
 SettingsManager& SettingsManager::instance() {
     static SettingsManager s_instance;
@@ -13,7 +24,7 @@ SettingsManager& SettingsManager::instance() {
 SettingsManager::SettingsManager(QObject *parent)
     : QObject(parent)
 {
-    QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
+    QString configDir = configDirectory();
     QDir().mkpath(configDir);
     QString configFilePath = configDir + QStringLiteral("/config.ini");
 
@@ -121,13 +132,13 @@ void SettingsManager::clearRecentFiles() {
 
 double SettingsManager::resumePosition(const QString &filePath) const {
     if (filePath.isEmpty()) return 0.0;
-    QString key = QStringLiteral("Resume/") + QString::number(qHash(filePath), 16);
+    QString key = fileKey(QStringLiteral("Resume"), filePath);
     return m_settings->value(key, 0.0).toDouble();
 }
 
 void SettingsManager::setResumePosition(const QString &filePath, double seconds) {
     if (filePath.isEmpty()) return;
-    QString key = QStringLiteral("Resume/") + QString::number(qHash(filePath), 16);
+    QString key = fileKey(QStringLiteral("Resume"), filePath);
     if (seconds > 5.0) {
         m_settings->setValue(key, seconds);
     } else {
@@ -155,7 +166,7 @@ QList<SettingsManager::Bookmark> SettingsManager::bookmarks(const QString &fileP
     QList<Bookmark> list;
     if (filePath.isEmpty()) return list;
 
-    QString key = QStringLiteral("Bookmarks/") + QString::number(qHash(filePath), 16);
+    QString key = fileKey(QStringLiteral("Bookmarks"), filePath);
     QStringList rawList = m_settings->value(key).toStringList();
 
     for (const QString &raw : rawList) {
@@ -174,7 +185,7 @@ QList<SettingsManager::Bookmark> SettingsManager::bookmarks(const QString &fileP
 void SettingsManager::addBookmark(const QString &filePath, double seconds, const QString &title) {
     if (filePath.isEmpty() || seconds < 0.0) return;
 
-    QString key = QStringLiteral("Bookmarks/") + QString::number(qHash(filePath), 16);
+    QString key = fileKey(QStringLiteral("Bookmarks"), filePath);
     QStringList rawList = m_settings->value(key).toStringList();
 
     QString bmTitle = title;
@@ -193,7 +204,7 @@ void SettingsManager::addBookmark(const QString &filePath, double seconds, const
 void SettingsManager::removeBookmark(const QString &filePath, int index) {
     if (filePath.isEmpty()) return;
 
-    QString key = QStringLiteral("Bookmarks/") + QString::number(qHash(filePath), 16);
+    QString key = fileKey(QStringLiteral("Bookmarks"), filePath);
     QStringList rawList = m_settings->value(key).toStringList();
 
     if (index >= 0 && index < rawList.size()) {
@@ -204,7 +215,7 @@ void SettingsManager::removeBookmark(const QString &filePath, int index) {
 
 void SettingsManager::clearBookmarks(const QString &filePath) {
     if (filePath.isEmpty()) return;
-    QString key = QStringLiteral("Bookmarks/") + QString::number(qHash(filePath), 16);
+    QString key = fileKey(QStringLiteral("Bookmarks"), filePath);
     m_settings->remove(key);
 }
 
@@ -265,4 +276,4 @@ bool SettingsManager::importSettings(const QString &filePath) {
     return ok;
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

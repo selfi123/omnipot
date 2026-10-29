@@ -5,7 +5,7 @@
 #include <QTimer>
 #include "playback/playback_engine.h"
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class InfoOverlay : public QWidget {
     Q_OBJECT
@@ -30,4 +30,4 @@ private:
     QTimer *m_timer = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

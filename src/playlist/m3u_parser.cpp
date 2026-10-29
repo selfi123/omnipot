@@ -4,7 +4,7 @@
 #include <QFileInfo>
 #include <QDir>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 QList<PlaylistItem> M3uParser::load(const QString &filePath) {
     QList<PlaylistItem> items;
@@ -69,4 +69,4 @@ bool M3uParser::save(const QString &filePath, const QList<PlaylistItem> &items) 
     return true;
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

@@ -4,7 +4,7 @@
 #include <QList>
 #include "playlist/playlist_item.h"
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class PlaylistManager : public QAbstractListModel {
     Q_OBJECT
@@ -55,8 +55,9 @@ public Q_SLOTS:
     void previous();
 
 Q_SIGNALS:
-    void currentItemChanged(const PotPlayer::PlaylistItem &item);
+    void currentItemChanged(const Omnipot::PlaylistItem &item);
     void playlistChanged();
+    void playbackModeChanged();
 
 private:
     void updateShuffledIndices();
@@ -69,4 +70,4 @@ private:
     QList<int> m_shuffledOrder;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

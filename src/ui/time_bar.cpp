@@ -4,7 +4,7 @@
 #include <QStyleOptionSlider>
 #include <algorithm>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 TimeBar::TimeBar(QWidget *parent)
     : QSlider(Qt::Horizontal, parent)
@@ -84,6 +84,11 @@ void TimeBar::mousePressEvent(QMouseEvent *event) {
 void TimeBar::mouseMoveEvent(QMouseEvent *event) {
     if (m_duration > 0.0) {
         double hoverSec = posToSeconds(event->pos().x());
+        if (event->buttons() & Qt::LeftButton) {
+            // Scrubbing: the press handler bypasses QSlider's own dragging
+            setPosition(hoverSec);
+            Q_EMIT seekRequested(hoverSec);
+        }
         QPoint tipPos = event->globalPosition().toPoint() - QPoint(25, 34);
         QString tipHtml = QStringLiteral("<span style='color: #FFFFFF; font-weight: bold;'>%1</span>").arg(formatTime(hoverSec));
         QToolTip::showText(tipPos, tipHtml, this);
@@ -108,7 +113,7 @@ void TimeBar::paintEvent(QPaintEvent *) {
     painter.fillRect(0, barY, w, barHeight, QColor(45, 45, 45));
 
     if (m_duration > 0.0) {
-        // 2. Played Progress (PotPlayer Red Accent)
+        // 2. Played Progress (Red Accent)
         double progressRatio = std::clamp(m_position / m_duration, 0.0, 1.0);
         int playedW = static_cast<int>(progressRatio * w);
         painter.fillRect(0, barY, playedW, barHeight, QColor(229, 38, 38));
@@ -132,4 +137,4 @@ void TimeBar::paintEvent(QPaintEvent *) {
     }
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

@@ -16,7 +16,7 @@
 #include "ui/title_bar.h"
 #include "config/settings_manager.h"
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -27,8 +27,12 @@ public:
 
     PlaylistManager* playlistManager() const { return m_playlistManager; }
 
+    // Adds the paths to the playlist and starts playing the first one added.
+    // startSeconds < 0 means "use the remembered resume position".
+    void openPaths(const QStringList &paths, double startSeconds = -1.0);
+
 public Q_SLOTS:
-    void openMediaFile(const QString &filePath);
+    void openMediaFile(const QString &filePath, double startSeconds = -1.0);
     void promptOpenFile();
     void promptOpenUrl();
     void togglePlaylistDrawer();
@@ -86,6 +90,9 @@ private:
     void updateWindowBorder();
     Qt::Edges calculateResizeEdges(const QPoint &pos) const;
     void updateCursorShape(Qt::Edges edges);
+    void saveResumePosition();
+    void applyStoredPreferences();
+    void applyPlaylistPreferences();
 
     PlaybackEngine *m_engine = nullptr;
     PlaylistManager *m_playlistManager = nullptr;
@@ -96,6 +103,7 @@ private:
     TitleBar *m_titleBar = nullptr;
     QWidget *m_centralContainer = nullptr;
     bool m_isStayOnTop = false;
+    QAction *m_stayOnTopAct = nullptr;
 
     VideoWidget *m_videoWidget = nullptr;
     TimeBar *m_timeBar = nullptr;
@@ -134,6 +142,7 @@ private:
     QString m_currentFilePath;
     double m_currentPosition = 0.0;
     double m_currentDuration = 0.0;
+    double m_pendingStart = -1.0;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

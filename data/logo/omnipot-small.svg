@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Omnipot icon, simplified for 16-32px. Original artwork, GPL-3.0-or-later. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect x="16" y="16" width="480" height="480" rx="104" fill="#18213C"/>
+  <rect x="40" y="200" width="432" height="56" rx="28" fill="#5EEAD4"/>
+  <path d="M80 248 H432 V292 C432 392 360 448 256 448 C152 448 80 392 80 292 Z" fill="#14B8A6"/>
+  <path d="M216 276 L216 404 L320 340 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="20" stroke-linejoin="round"/>
+  <path d="M256 160 V72" stroke="#FB7185" stroke-width="56" stroke-linecap="round"/>
+</svg>

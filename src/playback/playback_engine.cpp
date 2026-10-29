@@ -1,7 +1,7 @@
 #include "playback/playback_engine.h"
 
-namespace PotPlayer {
+namespace Omnipot {
 
 PlaybackEngine::~PlaybackEngine() = default;
 
-} // namespace PotPlayer
+} // namespace Omnipot

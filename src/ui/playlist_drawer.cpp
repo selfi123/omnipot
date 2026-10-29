@@ -10,7 +10,7 @@
 #include <QToolTip>
 #include <QFontMetrics>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 PlaylistDrawer::PlaylistDrawer(PlaylistManager *playlistManager, QWidget *parent)
     : QWidget(parent)
@@ -22,6 +22,8 @@ PlaylistDrawer::PlaylistDrawer(PlaylistManager *playlistManager, QWidget *parent
 
     connect(m_manager, &PlaylistManager::playlistChanged, this, &PlaylistDrawer::updateHeader);
     connect(m_manager, &PlaylistManager::currentItemChanged, this, &PlaylistDrawer::updateHeader);
+    connect(m_manager, &PlaylistManager::playbackModeChanged, this, &PlaylistDrawer::syncModeButtons);
+    syncModeButtons();
 }
 
 void PlaylistDrawer::setupUi() {
@@ -110,7 +112,7 @@ void PlaylistDrawer::setupUi() {
     bottomToolbar->addWidget(m_shuffleBtn);
 
     m_repeatBtn = new QPushButton(QStringLiteral("🔁 Off"), this);
-    m_repeatBtn->setToolTip(QStringLiteral("Cycle Repeat Mode (Off / All / One)"));
+    m_repeatBtn->setToolTip(QStringLiteral("Cycle Repeat Mode (Off / One / All)"));
     connect(m_repeatBtn, &QPushButton::clicked, this, &PlaylistDrawer::cycleRepeatMode);
     bottomToolbar->addWidget(m_repeatBtn);
 
@@ -194,28 +196,35 @@ void PlaylistDrawer::toggleShuffle() {
 }
 
 void PlaylistDrawer::cycleRepeatMode() {
-    RepeatMode curr = m_manager->repeatMode();
-    RepeatMode nextMode;
-    QString label;
-
-    switch (curr) {
+    switch (m_manager->repeatMode()) {
     case RepeatMode::None:
-        nextMode = RepeatMode::Track;
-        label = QStringLiteral("🔂 Track");
+        m_manager->setRepeatMode(RepeatMode::Track);
         break;
     case RepeatMode::Track:
-        nextMode = RepeatMode::All;
-        label = QStringLiteral("🔁 All");
+        m_manager->setRepeatMode(RepeatMode::All);
         break;
     case RepeatMode::All:
     default:
-        nextMode = RepeatMode::None;
-        label = QStringLiteral("🔁 Off");
+        m_manager->setRepeatMode(RepeatMode::None);
         break;
     }
+}
 
-    m_manager->setRepeatMode(nextMode);
-    m_repeatBtn->setText(label);
+void PlaylistDrawer::syncModeButtons() {
+    // Modes can also change from Preferences, so the buttons follow the manager
+    m_shuffleBtn->setChecked(m_manager->isShuffle());
+    switch (m_manager->repeatMode()) {
+    case RepeatMode::Track:
+        m_repeatBtn->setText(QStringLiteral("🔂 Track"));
+        break;
+    case RepeatMode::All:
+        m_repeatBtn->setText(QStringLiteral("🔁 All"));
+        break;
+    case RepeatMode::None:
+    default:
+        m_repeatBtn->setText(QStringLiteral("🔁 Off"));
+        break;
+    }
 }
 
 void PlaylistDrawer::promptSavePlaylist() {
@@ -223,7 +232,7 @@ void PlaylistDrawer::promptSavePlaylist() {
         this,
         QStringLiteral("Save Playlist"),
         QString(),
-        QStringLiteral("PotPlayer Playlist (*.dpl);;M3U Playlist (*.m3u);;M3U8 Playlist (*.m3u8)")
+        QStringLiteral("DPL Playlist (*.dpl);;M3U Playlist (*.m3u);;M3U8 Playlist (*.m3u8)")
     );
     if (!filePath.isEmpty()) {
         m_manager->savePlaylist(filePath);
@@ -280,4 +289,4 @@ bool PlaylistDrawer::eventFilter(QObject *watched, QEvent *event) {
     return QWidget::eventFilter(watched, event);
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

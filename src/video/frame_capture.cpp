@@ -8,7 +8,7 @@
 #include <QStandardPaths>
 #include <QDebug>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 FrameCapture::FrameCapture(QObject *parent)
     : QObject(parent)
@@ -26,7 +26,7 @@ QString FrameCapture::defaultCaptureDirectory() {
     if (pictures.isEmpty()) {
         pictures = QDir::homePath() + QStringLiteral("/Pictures");
     }
-    return pictures + QStringLiteral("/PotPlayer");
+    return pictures + QStringLiteral("/Omnipot");
 }
 
 bool FrameCapture::captureFrame(mpv_handle *mpv, const QString &customDir, const QString &format, QString *savedPath) {
@@ -47,12 +47,13 @@ bool FrameCapture::captureFrame(mpv_handle *mpv, const QString &customDir, const
     QString timestamp = QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_hhmmss_zzz"));
     QString ext = format.trimmed().toLower();
     if (ext.isEmpty()) ext = QStringLiteral("png");
-    QString filename = QStringLiteral("PotPlayer_%1.%2").arg(timestamp, ext);
+    QString filename = QStringLiteral("Omnipot_%1.%2").arg(timestamp, ext);
     QString fullPath = dir.absoluteFilePath(filename);
 
+    const QByteArray utf8Path = fullPath.toUtf8();
     const char *cmd[] = {
         "screenshot-to-file",
-        fullPath.toUtf8().constData(),
+        utf8Path.constData(),
         "video",
         nullptr
     };
@@ -78,10 +79,11 @@ bool FrameCapture::copyFrameToClipboard(mpv_handle *mpv) {
         return false;
     }
 
-    QString tempFile = QDir::tempPath() + QStringLiteral("/potplayer_clip_%1.png").arg(QDateTime::currentMSecsSinceEpoch());
+    QString tempFile = QDir::tempPath() + QStringLiteral("/omnipot_clip_%1.png").arg(QDateTime::currentMSecsSinceEpoch());
+    const QByteArray utf8Path = tempFile.toUtf8();
     const char *cmd[] = {
         "screenshot-to-file",
-        tempFile.toUtf8().constData(),
+        utf8Path.constData(),
         "video",
         nullptr
     };
@@ -159,23 +161,29 @@ void FrameCapture::onConsecutiveTimer() {
     QString filename = QStringLiteral("Seq_%1_%2.%3").arg(timestamp, numStr, ext);
     QString fullPath = QDir(m_consecutiveDir).absoluteFilePath(filename);
 
+    const QByteArray utf8Path = fullPath.toUtf8();
     const char *cmd[] = {
         "screenshot-to-file",
-        fullPath.toUtf8().constData(),
+        utf8Path.constData(),
         "video",
         nullptr
     };
 
     int status = mpv_command(m_currentMpv, cmd);
-    if (status >= 0) {
-        m_capturedCount++;
-        emit consecutiveProgressChanged(m_capturedCount, m_totalToCapture);
-        emit frameCaptured(fullPath);
+    if (status < 0) {
+        // Without this the timer would retry forever (e.g. nothing is loaded)
+        emit captureError(QStringLiteral("Screenshot failed: ") + QString::fromUtf8(mpv_error_string(status)));
+        stopConsecutiveCapture();
+        return;
     }
+
+    m_capturedCount++;
+    emit consecutiveProgressChanged(m_capturedCount, m_totalToCapture);
+    emit frameCaptured(fullPath);
 
     if (m_capturedCount >= m_totalToCapture) {
         stopConsecutiveCapture();
     }
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

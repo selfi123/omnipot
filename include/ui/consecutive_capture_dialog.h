@@ -9,7 +9,7 @@
 #include <QPushButton>
 #include "video/frame_capture.h"
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class ConsecutiveCaptureDialog : public QDialog {
     Q_OBJECT
@@ -41,4 +41,4 @@ private:
     QPushButton *m_closeBtn = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

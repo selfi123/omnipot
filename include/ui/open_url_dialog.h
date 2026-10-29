@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QPushButton>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class OpenUrlDialog : public QDialog {
     Q_OBJECT
@@ -28,4 +28,4 @@ private:
     QPushButton *m_cancelBtn = nullptr;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

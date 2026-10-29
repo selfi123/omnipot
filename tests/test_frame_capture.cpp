@@ -8,14 +8,14 @@ class TestFrameCapture : public QObject {
 
 private Q_SLOTS:
     void testDefaultDirectory() {
-        QString dir = PotPlayer::FrameCapture::defaultCaptureDirectory();
+        QString dir = Omnipot::FrameCapture::defaultCaptureDirectory();
         QVERIFY(!dir.isEmpty());
-        QVERIFY(dir.endsWith(QStringLiteral("PotPlayer")));
+        QVERIFY(dir.endsWith(QStringLiteral("Omnipot")));
     }
 
     void testNullHandleGracefulFailure() {
-        PotPlayer::FrameCapture capture;
-        QSignalSpy errSpy(&capture, &PotPlayer::FrameCapture::captureError);
+        Omnipot::FrameCapture capture;
+        QSignalSpy errSpy(&capture, &Omnipot::FrameCapture::captureError);
 
         QString savedPath;
         bool res = capture.captureFrame(nullptr, QString(), QStringLiteral("png"), &savedPath);
@@ -33,7 +33,7 @@ private Q_SLOTS:
     }
 
     void testConsecutiveCaptureState() {
-        PotPlayer::FrameCapture capture;
+        Omnipot::FrameCapture capture;
         QCOMPARE(capture.isConsecutiveCaptureRunning(), false);
         QCOMPARE(capture.consecutiveProgress(), 0);
         QCOMPARE(capture.consecutiveTotal(), 0);

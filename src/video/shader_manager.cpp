@@ -1,10 +1,11 @@
 #include "video/shader_manager.h"
+#include "config/settings_manager.h"
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
 #include <QDebug>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 ShaderManager& ShaderManager::instance() {
     static ShaderManager inst;
@@ -12,7 +13,7 @@ ShaderManager& ShaderManager::instance() {
 }
 
 void ShaderManager::initialize() {
-    m_shaderDir = QDir::homePath() + QStringLiteral("/.config/potplayer-linux/shaders");
+    m_shaderDir = SettingsManager::configDirectory() + QStringLiteral("/shaders");
     QDir dir(m_shaderDir);
     if (!dir.exists()) {
         dir.mkpath(QStringLiteral("."));
@@ -197,4 +198,4 @@ void ShaderManager::writeShaderFiles() {
     }
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

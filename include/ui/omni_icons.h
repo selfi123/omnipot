@@ -5,9 +5,9 @@
 #include <QSize>
 #include <functional>
 
-namespace PotPlayer {
+namespace Omnipot {
 
-class PotIcons {
+class OmniIcons {
 public:
     static QIcon playIcon(int size = 20);
     static QIcon pauseIcon(int size = 20);
@@ -29,5 +29,5 @@ private:
                            const QColor &hoverColor = QColor(0xFF, 0xFF, 0xFF));
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot
 

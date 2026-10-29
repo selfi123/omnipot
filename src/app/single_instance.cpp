@@ -3,13 +3,20 @@
 #include <QDataStream>
 #include <QFileInfo>
 #include <QCoreApplication>
+#include <QStandardPaths>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 QString SingleInstanceController::socketServerName() {
+    // Prefer the per-user runtime dir (mode 0700) over the shared /tmp, where
+    // another local user could squat on a predictable socket name
+    const QString runtimeDir = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation);
+    if (!runtimeDir.isEmpty()) {
+        return runtimeDir + QStringLiteral("/omnipot.sock");
+    }
     QString user = qEnvironmentVariable("USER");
     if (user.isEmpty()) user = QStringLiteral("default");
-    return QStringLiteral("potplayer_linux_ipc_") + user;
+    return QStringLiteral("omnipot_ipc_") + user;
 }
 
 SingleInstanceController::SingleInstanceController(QObject *parent)
@@ -43,6 +50,7 @@ bool SingleInstanceController::sendArgsToExistingInstance(const QStringList &arg
 bool SingleInstanceController::startServer(MainWindow *mainWindow) {
     m_mainWindow = mainWindow;
     m_server = new QLocalServer(this);
+    m_server->setSocketOptions(QLocalServer::UserAccessOption);
 
     // Remove any stale socket file left from previous crashes
     QLocalServer::removeServer(socketServerName());
@@ -60,29 +68,24 @@ void SingleInstanceController::onNewConnection() {
     if (!clientSocket) return;
 
     connect(clientSocket, &QLocalSocket::readyRead, this, [this, clientSocket]() {
-        QByteArray data = clientSocket->readAll();
-        QDataStream in(&data, QIODevice::ReadOnly);
+        // The message may arrive in several chunks; wait until it is complete
+        QDataStream in(clientSocket);
+        in.startTransaction();
         QStringList args;
         in >> args;
+        if (!in.commitTransaction()) {
+            return;
+        }
 
-        if (m_mainWindow && !args.isEmpty()) {
-            for (const QString &arg : args) {
-                if (arg == QStringLiteral("-")) {
-                    m_mainWindow->playlistManager()->addPath(QStringLiteral("fd://0"));
-                } else if (QFileInfo::exists(arg) || arg.contains(QStringLiteral("://"))) {
-                    m_mainWindow->playlistManager()->addPath(arg);
+        if (m_mainWindow) {
+            QStringList paths;
+            for (const QString &arg : std::as_const(args)) {
+                // stdin belongs to the forwarding process, not to this one
+                if (arg != QStringLiteral("-")) {
+                    paths.append(arg);
                 }
             }
-
-            // Play the last added or open directly
-            if (!args.isEmpty()) {
-                QString first = args.first();
-                if (first == QStringLiteral("-")) {
-                    m_mainWindow->openMediaFile(QStringLiteral("fd://0"));
-                } else if (QFileInfo::exists(first) || first.contains(QStringLiteral("://"))) {
-                    m_mainWindow->openMediaFile(first);
-                }
-            }
+            m_mainWindow->openPaths(paths);
 
             m_mainWindow->showNormal();
             m_mainWindow->raise();
@@ -95,4 +98,4 @@ void SingleInstanceController::onNewConnection() {
     connect(clientSocket, &QLocalSocket::disconnected, clientSocket, &QLocalSocket::deleteLater);
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

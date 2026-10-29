@@ -4,7 +4,7 @@
 #include <QMouseEvent>
 #include <QToolTip>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 class TimeBar : public QSlider {
     Q_OBJECT
@@ -40,4 +40,4 @@ private:
     bool m_isHovered = false;
 };
 
-} // namespace PotPlayer
+} // namespace Omnipot

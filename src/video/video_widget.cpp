@@ -12,7 +12,7 @@
 #include <mpv/render.h>
 #include <mpv/render_gl.h>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 VideoWidget::VideoWidget(QWidget *parent)
     : QOpenGLWidget(parent)
@@ -133,7 +133,7 @@ void VideoWidget::paintGL() {
         font.setPointSize(14);
         font.setBold(true);
         painter.setFont(font);
-        painter.drawText(rect().adjusted(0, -80, 0, -80), Qt::AlignCenter, QStringLiteral("PotPlayer Linux"));
+        painter.drawText(rect().adjusted(0, -80, 0, -80), Qt::AlignCenter, QStringLiteral("Omnipot"));
 
         int numBars = static_cast<int>(m_bars.size());
         int totalWidth = static_cast<int>(width() * 0.7);
@@ -159,14 +159,14 @@ void VideoWidget::paintGL() {
             painter.fillRect(x, peakY - 2, barWidth, 2, QColor(255, 255, 255));
         }
     } else if (m_isIdle) {
-        // Authentic PotPlayer center watermark (Image parity)
+        // Idle center watermark
         QPainter painter(this);
         painter.setRenderHint(QPainter::Antialiasing, true);
 
         int cx = width() / 2;
         int cy = height() / 2;
 
-        // PotPlayer icon: dark circular disc with play triangle
+        // Logo mark: dark circular disc with play triangle
         const int discRadius = 26;
         painter.setPen(Qt::NoPen);
         painter.setBrush(QColor(42, 42, 42, 190));
@@ -180,14 +180,14 @@ void VideoWidget::paintGL() {
                  << QPoint(cx - 66, cy);
         painter.drawPolygon(triangle);
 
-        // Subtle grey "PotPlayer" typography
+        // Subtle grey "Omnipot" typography
         QFont font = painter.font();
         font.setFamily(QStringLiteral("Segoe UI, Ubuntu, sans-serif"));
         font.setPointSize(23);
         font.setWeight(QFont::Medium);
         painter.setFont(font);
         painter.setPen(QColor(75, 75, 75, 220));
-        painter.drawText(QRect(cx - 36, cy - 25, 200, 50), Qt::AlignLeft | Qt::AlignVCenter, QStringLiteral("PotPlayer"));
+        painter.drawText(QRect(cx - 36, cy - 25, 200, 50), Qt::AlignLeft | Qt::AlignVCenter, QStringLiteral("Omnipot"));
     }
 }
 
@@ -213,13 +213,21 @@ void VideoWidget::setVisualizerEnabled(bool enable) {
 }
 
 void VideoWidget::mousePressEvent(QMouseEvent *event) {
+    if (event->button() == Qt::RightButton) {
+        Q_EMIT rightClicked(event->globalPosition().toPoint());
+        event->accept();
+        return;
+    }
+    if (event->button() == Qt::MiddleButton) {
+        // Accept so the press doesn't also reach MainWindow's filter and toggle fullscreen back
+        Q_EMIT middleClicked();
+        event->accept();
+        return;
+    }
     if (event->button() == Qt::LeftButton) {
         Q_EMIT clicked();
-    } else if (event->button() == Qt::RightButton) {
-        Q_EMIT rightClicked(event->globalPosition().toPoint());
-    } else if (event->button() == Qt::MiddleButton) {
-        Q_EMIT middleClicked();
     }
+    // Left presses keep propagating so window-edge resizing still works over the video
     QOpenGLWidget::mousePressEvent(event);
 }
 
@@ -240,4 +248,4 @@ void VideoWidget::mouseMoveEvent(QMouseEvent *event) {
     QOpenGLWidget::mouseMoveEvent(event);
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

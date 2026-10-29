@@ -6,7 +6,7 @@
 #include <QRandomGenerator>
 #include <algorithm>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 static const QStringList s_supportedMediaExtensions = {
     QStringLiteral("mp4"), QStringLiteral("mkv"), QStringLiteral("avi"),
@@ -224,14 +224,16 @@ void PlaylistManager::previous() {
 }
 
 void PlaylistManager::setRepeatMode(RepeatMode mode) {
+    if (m_repeatMode == mode) return;
     m_repeatMode = mode;
+    Q_EMIT playbackModeChanged();
 }
 
 void PlaylistManager::setShuffle(bool enable) {
+    if (m_shuffle == enable) return;
     m_shuffle = enable;
-    if (m_shuffle) {
-        updateShuffledIndices();
-    }
+    updateShuffledIndices();
+    Q_EMIT playbackModeChanged();
 }
 
 void PlaylistManager::updateShuffledIndices() {
@@ -304,4 +306,4 @@ bool PlaylistManager::savePlaylist(const QString &filePath) {
     return false;
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot

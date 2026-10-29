@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
-project(potplayer-linux
+project(omnipot
     VERSION 1.0.0
-    DESCRIPTION "Native PotPlayer Media Player Clone for Fedora Linux"
+    DESCRIPTION "Native Qt 6 + libmpv media player for Linux"
     LANGUAGES CXX
 )
 
@@ -52,7 +52,7 @@ set(COMMON_HEADERS
     include/ui/open_url_dialog.h
     include/ui/preferences_dialog.h
     include/ui/title_bar.h
-    include/ui/pot_icons.h
+    include/ui/omni_icons.h
 )
 
 # Common core sources
@@ -64,7 +64,7 @@ set(COMMON_SOURCES
     src/ui/time_bar.cpp
     src/ui/main_window.cpp
     src/ui/title_bar.cpp
-    src/ui/pot_icons.cpp
+    src/ui/omni_icons.cpp
     src/playlist/dpl_parser.cpp
     src/playlist/m3u_parser.cpp
     src/playlist/playlist_manager.cpp
@@ -83,12 +83,12 @@ set(COMMON_SOURCES
 )
 
 # Main Application Executable
-add_executable(potplayer-linux
+add_executable(omnipot
     src/main.cpp
     ${COMMON_SOURCES}
 )
 
-target_link_libraries(potplayer-linux PRIVATE
+target_link_libraries(omnipot PRIVATE
     Qt6::Core
     Qt6::Gui
     Qt6::Widgets
@@ -108,12 +108,12 @@ add_executable(test_playback_engine
     src/playback/mpv_engine.cpp
     src/config/settings_manager.cpp
     src/ui/time_bar.cpp
-    src/ui/pot_icons.cpp
+    src/ui/omni_icons.cpp
     include/playback/playback_engine.h
     include/playback/mpv_engine.h
     include/config/settings_manager.h
     include/ui/time_bar.h
-    include/ui/pot_icons.h
+    include/ui/omni_icons.h
 )
 
 target_link_libraries(test_playback_engine PRIVATE
@@ -151,7 +151,9 @@ add_test(NAME test_playlist COMMAND test_playlist)
 add_executable(test_shaders
     tests/test_shaders.cpp
     src/video/shader_manager.cpp
+    src/config/settings_manager.cpp
     include/video/shader_manager.h
+    include/config/settings_manager.h
 )
 
 target_link_libraries(test_shaders PRIVATE
@@ -179,14 +181,14 @@ add_test(NAME test_frame_capture COMMAND test_frame_capture)
 
 # Installation
 include(GNUInstallDirs)
-install(TARGETS potplayer-linux DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(FILES data/potplayer-linux.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+install(TARGETS omnipot DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES data/omnipot.desktop DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 install(DIRECTORY data/icons/ DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor)
 
 # Packaging with CPack
-set(CPACK_PACKAGE_NAME "potplayer-linux")
-set(CPACK_PACKAGE_VENDOR "PotPlayer Linux Contributors")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Native PotPlayer Media Player for Linux")
+set(CPACK_PACKAGE_NAME "omnipot")
+set(CPACK_PACKAGE_VENDOR "Omnipot Contributors")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Native media player for Linux built on Qt 6 and libmpv")
 set(CPACK_PACKAGE_VERSION "1.0.0")
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
@@ -201,5 +203,3 @@ set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
 set(CPACK_RPM_PACKAGE_REQUIRES "qt6-qtbase >= 6.5, mpv-libs >= 0.35, zlib")
 
 include(CPack)
-install(FILES data/potplayer-linux.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
-

@@ -8,7 +8,7 @@
 #include <QDir>
 #include <QStandardPaths>
 
-namespace PotPlayer {
+namespace Omnipot {
 
 AudioExtractDialog::AudioExtractDialog(const QString &sourceMedia, QWidget *parent)
     : QDialog(parent)
@@ -151,7 +151,10 @@ void AudioExtractDialog::startExtraction() {
     else if (bitrateText.contains(QStringLiteral("128"))) bitrate = QStringLiteral("128k");
 
     QStringList args;
-    args << QStringLiteral("-y")
+    // -nostdin: ffmpeg otherwise reads the QProcess pipe for interactive commands
+    args << QStringLiteral("-hide_banner") << QStringLiteral("-nostdin")
+         << QStringLiteral("-loglevel") << QStringLiteral("error")
+         << QStringLiteral("-y")
          << QStringLiteral("-i") << m_sourceMedia
          << QStringLiteral("-vn");
 
@@ -216,4 +219,4 @@ void AudioExtractDialog::onProcessError(QProcess::ProcessError error) {
     }
 }
 
-} // namespace PotPlayer
+} // namespace Omnipot
