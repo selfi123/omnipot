@@ -138,6 +138,7 @@ private:
     QMenu *m_captureMenu = nullptr;
 
     class FrameCapture *m_frameCapture = nullptr;
+    class RealtimeSubtitleController *m_realtimeSubtitle = nullptr;
 
     QString m_currentFilePath;
     double m_currentPosition = 0.0;

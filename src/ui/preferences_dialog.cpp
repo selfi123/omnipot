@@ -1,5 +1,8 @@
 #include "ui/preferences_dialog.h"
 #include "config/settings_manager.h"
+#include "subtitle/realtime_subtitle.h"
+#include "subtitle/whisper_model.h"
+#include <QThread>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QGridLayout>
@@ -255,6 +258,39 @@ QWidget* PreferencesDialog::createSubtitlePage() {
     gl->addWidget(m_assOverrideCheck, 2, 0, 1, 2);
 
     layout->addWidget(group);
+
+    auto *rtGroup = new QGroupBox(QStringLiteral("Realtime subtitle"), page);
+    auto *rl = new QGridLayout(rtGroup);
+    rl->setSpacing(10);
+
+    rl->addWidget(new QLabel(QStringLiteral("Speech model:"), rtGroup), 0, 0);
+    m_realtimeModelCombo = new QComboBox(rtGroup);
+    const int threads = std::max(1, QThread::idealThreadCount());
+    const WhisperModelInfo autoModel = WhisperModels::info(WhisperModels::autoSelect(threads));
+    m_realtimeModelCombo->addItem(QStringLiteral("Automatic (%1 for this computer)").arg(autoModel.displayName), QStringLiteral("auto"));
+    for (const WhisperModelInfo &m : WhisperModels::all()) {
+        const QString installed = WhisperModels::isInstalled(m.id) ? QStringLiteral(", downloaded") : QString();
+        m_realtimeModelCombo->addItem(QStringLiteral("%1 - about %2 MB%3").arg(m.displayName).arg(m.approxSizeMb).arg(installed), m.id);
+    }
+    rl->addWidget(m_realtimeModelCombo, 0, 1);
+
+    rl->addWidget(new QLabel(QStringLiteral("Spoken language:"), rtGroup), 1, 0);
+    m_realtimeLanguageCombo = new QComboBox(rtGroup);
+    for (const auto &[code, name] : WhisperModels::languages()) {
+        m_realtimeLanguageCombo->addItem(name, code);
+    }
+    rl->addWidget(m_realtimeLanguageCombo, 1, 1);
+
+    auto *rtNote = new QLabel(RealtimeSubtitleController::isAvailable()
+        ? QStringLiteral("Makes subtitles from the speech while media plays, entirely on this computer. "
+                         "Turn it on from the Subtitles menu. Larger models are more accurate but need a faster CPU.")
+        : QStringLiteral("This build of Omnipot was compiled without whisper.cpp, so Realtime subtitle is unavailable."), rtGroup);
+    rtNote->setWordWrap(true);
+    rtNote->setStyleSheet(QStringLiteral("color: #9a9a9a;"));
+    rl->addWidget(rtNote, 2, 0, 1, 2);
+    rtGroup->setEnabled(RealtimeSubtitleController::isAvailable());
+
+    layout->addWidget(rtGroup);
     layout->addStretch();
     return page;
 }
@@ -337,6 +373,11 @@ void PreferencesDialog::loadCurrentSettings() {
         m_subPosSlider->setValue(m_engine->subtitlePosition());
         m_assOverrideCheck->setChecked(m_engine->isAssOverride());
     }
+
+    const int modelIndex = m_realtimeModelCombo->findData(s.realtimeSubtitleModel());
+    m_realtimeModelCombo->setCurrentIndex(std::max(0, modelIndex));
+    const int languageIndex = m_realtimeLanguageCombo->findData(s.realtimeSubtitleLanguage());
+    m_realtimeLanguageCombo->setCurrentIndex(std::max(0, languageIndex));
 }
 
 void PreferencesDialog::applySettings() {
@@ -392,6 +433,9 @@ void PreferencesDialog::applySettings() {
         m_engine->setSubtitlePosition(m_subPosSlider->value());
         m_engine->setAssOverride(m_assOverrideCheck->isChecked());
     }
+
+    s.setRealtimeSubtitleModel(m_realtimeModelCombo->currentData().toString());
+    s.setRealtimeSubtitleLanguage(m_realtimeLanguageCombo->currentData().toString());
 
     s.sync();
 }

@@ -71,6 +71,16 @@ public:
     QString audioChannels() const;
     void setAudioChannels(const QString &channels);
 
+    // Realtime subtitle (mode: 0 = off, 1 = original language, 2 = translate to English)
+    int realtimeSubtitleMode() const;
+    void setRealtimeSubtitleMode(int mode);
+
+    QString realtimeSubtitleModel() const; // "auto" or a model id
+    void setRealtimeSubtitleModel(const QString &model);
+
+    QString realtimeSubtitleLanguage() const; // whisper language code or "auto"
+    void setRealtimeSubtitleLanguage(const QString &language);
+
     // Preset & Defaults Management
     void resetToDefaults();
     bool exportSettings(const QString &filePath) const;
