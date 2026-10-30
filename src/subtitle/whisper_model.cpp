@@ -26,7 +26,7 @@ WhisperModelInfo info(const QString &id) {
 
 QString autoSelect(int cpuThreads) {
     if (cpuThreads < 4) return QStringLiteral("tiny");
-    if (cpuThreads < 8) return QStringLiteral("base");
+    if (cpuThreads < 16) return QStringLiteral("base");
     return QStringLiteral("small");
 }
 

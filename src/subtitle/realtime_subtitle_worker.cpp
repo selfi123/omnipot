@@ -1,6 +1,7 @@
 #include "subtitle/realtime_subtitle_worker.h"
 #include "subtitle/speech_activity.h"
 #include "subtitle/subtitle_timeline.h"
+#include <QDebug>
 #include <QElapsedTimer>
 #include <QMutexLocker>
 #include <QProcess>
@@ -183,6 +184,7 @@ void RealtimeSubtitleWorker::run() {
         }
 
         const double requested = window->end - window->start;
+        qInfo() << "[RealtimeSubtitle] Processing window:" << window->start << "->" << window->end;
         QElapsedTimer cost;
         cost.start();
         std::vector<float> pcm;
@@ -270,6 +272,8 @@ void RealtimeSubtitleWorker::run() {
 
         timeline.addResult(window->start, window->start + consumed, segments);
         lastWindowEnd = window->start + consumed;
+        qInfo() << "[RealtimeSubtitle] Window done:" << window->start << "->" << (window->start + consumed)
+                << "segments:" << segments.size() << "in" << cost.elapsed() << "ms";
         if (!segments.isEmpty()) {
             Q_EMIT subtitlesUpdated(timeline.toSrt());
         }

@@ -278,6 +278,7 @@ void RealtimeSubtitleController::onSubtitlesUpdated(const QString &srt) {
     }
 
     const int id = m_trackAdded ? ownTrackId() : -1;
+    qInfo() << "[RealtimeSubtitle] onSubtitlesUpdated: srt bytes=" << srt.size() << "id=" << id;
     if (id >= 0) {
         // sub-reload keeps the track selected if it was
         const QByteArray idText = QByteArray::number(id);

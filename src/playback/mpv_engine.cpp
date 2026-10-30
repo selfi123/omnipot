@@ -42,7 +42,7 @@ bool MpvEngine::initialize() {
     mpv_set_option_string(m_mpv, "config", "no");
     mpv_set_option_string(m_mpv, "terminal", "yes");
     mpv_set_option_string(m_mpv, "msg-level", "all=warn");
-    mpv_set_option_string(m_mpv, "hwdec", "auto-safe");
+    mpv_set_option_string(m_mpv, "hwdec", "vaapi,auto-safe");
     mpv_set_option_string(m_mpv, "vo", "libmpv");
     mpv_set_option_string(m_mpv, "keep-open", "always");
     mpv_set_option_string(m_mpv, "ytdl", "yes");
