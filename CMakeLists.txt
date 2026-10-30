@@ -35,6 +35,17 @@ if(OMNIPOT_REALTIME_SUBTITLE)
         pkg_check_modules(WHISPER QUIET IMPORTED_TARGET whisper)
         if(WHISPER_FOUND)
             set(OMNIPOT_WHISPER_TARGET PkgConfig::WHISPER)
+        else()
+            find_path(WHISPER_INCLUDE_DIR NAMES whisper.h PATH_SUFFIXES whisper)
+            find_library(WHISPER_LIB NAMES whisper whisper-cpp)
+            if(WHISPER_INCLUDE_DIR AND WHISPER_LIB)
+                add_library(whisper_imported UNKNOWN IMPORTED)
+                set_target_properties(whisper_imported PROPERTIES
+                    IMPORTED_LOCATION "${WHISPER_LIB}"
+                    INTERFACE_INCLUDE_DIRECTORIES "${WHISPER_INCLUDE_DIR}"
+                )
+                set(OMNIPOT_WHISPER_TARGET whisper_imported)
+            endif()
         endif()
     endif()
     if(OMNIPOT_WHISPER_TARGET)
