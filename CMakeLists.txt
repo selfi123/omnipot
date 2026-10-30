@@ -24,6 +24,28 @@ pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)
 
 find_package(ZLIB REQUIRED)
 
+# Realtime subtitle needs whisper.cpp; without it Omnipot still builds, minus that feature
+option(OMNIPOT_REALTIME_SUBTITLE "Build the Realtime subtitle feature (requires whisper.cpp)" ON)
+set(OMNIPOT_HAVE_WHISPER 0)
+if(OMNIPOT_REALTIME_SUBTITLE)
+    find_package(whisper CONFIG QUIET)
+    if(TARGET whisper)
+        set(OMNIPOT_WHISPER_TARGET whisper)
+    else()
+        pkg_check_modules(WHISPER QUIET IMPORTED_TARGET whisper)
+        if(WHISPER_FOUND)
+            set(OMNIPOT_WHISPER_TARGET PkgConfig::WHISPER)
+        endif()
+    endif()
+    if(OMNIPOT_WHISPER_TARGET)
+        set(OMNIPOT_HAVE_WHISPER 1)
+        message(STATUS "Realtime subtitle: enabled (whisper.cpp found)")
+    else()
+        message(WARNING "whisper.cpp not found: building without Realtime subtitle. "
+                        "Install libwhisper-dev (Debian/Ubuntu/Kali) or whisper.cpp, or pass -DOMNIPOT_REALTIME_SUBTITLE=OFF.")
+    endif()
+endif()
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
@@ -53,6 +75,10 @@ set(COMMON_HEADERS
     include/ui/preferences_dialog.h
     include/ui/title_bar.h
     include/ui/omni_icons.h
+    include/subtitle/subtitle_timeline.h
+    include/subtitle/whisper_model.h
+    include/subtitle/speech_activity.h
+    include/subtitle/realtime_subtitle.h
 )
 
 # Common core sources
@@ -79,8 +105,19 @@ set(COMMON_SOURCES
     src/ui/subtitle_search_dialog.cpp
     src/ui/open_url_dialog.cpp
     src/ui/preferences_dialog.cpp
+    src/subtitle/subtitle_timeline.cpp
+    src/subtitle/whisper_model.cpp
+    src/subtitle/speech_activity.cpp
+    src/subtitle/realtime_subtitle.cpp
     ${COMMON_HEADERS}
 )
+
+if(OMNIPOT_HAVE_WHISPER)
+    list(APPEND COMMON_SOURCES
+        src/subtitle/realtime_subtitle_worker.cpp
+        include/subtitle/realtime_subtitle_worker.h
+    )
+endif()
 
 # Main Application Executable
 add_executable(omnipot
@@ -98,6 +135,10 @@ target_link_libraries(omnipot PRIVATE
     PkgConfig::MPV
     ZLIB::ZLIB
 )
+target_compile_definitions(omnipot PRIVATE OMNIPOT_HAVE_WHISPER=${OMNIPOT_HAVE_WHISPER})
+if(OMNIPOT_HAVE_WHISPER)
+    target_link_libraries(omnipot PRIVATE ${OMNIPOT_WHISPER_TARGET})
+endif()
 
 # Testing
 enable_testing()
@@ -179,6 +220,23 @@ target_link_libraries(test_frame_capture PRIVATE
 
 add_test(NAME test_frame_capture COMMAND test_frame_capture)
 
+add_executable(test_realtime_subtitle
+    tests/test_realtime_subtitle.cpp
+    src/subtitle/subtitle_timeline.cpp
+    src/subtitle/whisper_model.cpp
+    src/subtitle/speech_activity.cpp
+    include/subtitle/subtitle_timeline.h
+    include/subtitle/whisper_model.h
+    include/subtitle/speech_activity.h
+)
+
+target_link_libraries(test_realtime_subtitle PRIVATE
+    Qt6::Core
+    Qt6::Test
+)
+
+add_test(NAME test_realtime_subtitle COMMAND test_realtime_subtitle)
+
 # Installation
 include(GNUInstallDirs)
 install(TARGETS omnipot DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -201,5 +259,7 @@ set(CPACK_GENERATOR "TGZ;RPM")
 set(CPACK_RPM_PACKAGE_LICENSE "GPLv3")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")
 set(CPACK_RPM_PACKAGE_REQUIRES "qt6-qtbase >= 6.5, mpv-libs >= 0.35, zlib")
+# ffmpeg and whisper.cpp are optional at runtime (Audio Extraction, Realtime subtitle)
+set(CPACK_RPM_PACKAGE_SUGGESTS "ffmpeg, whisper-cpp")
 
 include(CPack)

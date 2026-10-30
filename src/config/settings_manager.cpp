@@ -243,6 +243,30 @@ void SettingsManager::setAudioChannels(const QString &channels) {
     m_settings->setValue(QStringLiteral("Audio/Channels"), channels);
 }
 
+int SettingsManager::realtimeSubtitleMode() const {
+    return m_settings->value(QStringLiteral("RealtimeSubtitle/Mode"), 0).toInt();
+}
+
+void SettingsManager::setRealtimeSubtitleMode(int mode) {
+    m_settings->setValue(QStringLiteral("RealtimeSubtitle/Mode"), mode);
+}
+
+QString SettingsManager::realtimeSubtitleModel() const {
+    return m_settings->value(QStringLiteral("RealtimeSubtitle/Model"), QStringLiteral("auto")).toString();
+}
+
+void SettingsManager::setRealtimeSubtitleModel(const QString &model) {
+    m_settings->setValue(QStringLiteral("RealtimeSubtitle/Model"), model);
+}
+
+QString SettingsManager::realtimeSubtitleLanguage() const {
+    return m_settings->value(QStringLiteral("RealtimeSubtitle/Language"), QStringLiteral("auto")).toString();
+}
+
+void SettingsManager::setRealtimeSubtitleLanguage(const QString &language) {
+    m_settings->setValue(QStringLiteral("RealtimeSubtitle/Language"), language);
+}
+
 void SettingsManager::resetToDefaults() {
     m_settings->clear();
     setVolume(100);
@@ -255,6 +279,9 @@ void SettingsManager::resetToDefaults() {
     setRememberPlaybackPosition(true);
     setRepeatMode(0);
     setShuffle(false);
+    setRealtimeSubtitleMode(0);
+    setRealtimeSubtitleModel(QStringLiteral("auto"));
+    setRealtimeSubtitleLanguage(QStringLiteral("auto"));
     m_settings->sync();
 }
 

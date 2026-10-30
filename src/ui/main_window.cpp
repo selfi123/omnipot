@@ -21,6 +21,7 @@
 #include <QShortcut>
 #include <QSignalBlocker>
 #include <QCursor>
+#include <QActionGroup>
 #include <algorithm>
 #include <utility>
 #include "video/frame_capture.h"
@@ -31,6 +32,7 @@
 #include "ui/open_url_dialog.h"
 #include "ui/preferences_dialog.h"
 #include "ui/omni_icons.h"
+#include "subtitle/realtime_subtitle.h"
 
 namespace Omnipot {
 
@@ -47,6 +49,7 @@ MainWindow::MainWindow(PlaybackEngine *engine, QWidget *parent)
 
     m_playlistManager = new PlaylistManager(this);
     m_frameCapture = new FrameCapture(this);
+    m_realtimeSubtitle = new RealtimeSubtitleController(m_engine, this);
     ShaderManager::instance().initialize();
 
     setupUi();
@@ -620,6 +623,28 @@ void MainWindow::rebuildTrackMenus() {
     m_subtitleTracksMenu->addAction(QStringLiteral("Load Subtitle...\tAlt+O"), this, &MainWindow::promptLoadLocalSubtitle);
     m_subtitleTracksMenu->addAction(QStringLiteral("Add Subtitle..."), this, &MainWindow::promptLoadLocalSubtitle);
     m_subtitleTracksMenu->addAction(QStringLiteral("Search Subtitles Online...\tShift+S"), this, &MainWindow::openSubtitleSearchDialog);
+
+    if (RealtimeSubtitleController::isAvailable()) {
+        auto *realtimeMenu = m_subtitleTracksMenu->addMenu(QStringLiteral("Realtime subtitle"));
+        auto *realtimeGroup = new QActionGroup(realtimeMenu);
+        const std::pair<RealtimeSubtitleMode, QString> modes[] = {
+            {RealtimeSubtitleMode::Off, QStringLiteral("Off")},
+            {RealtimeSubtitleMode::Original, QStringLiteral("Original language")},
+            {RealtimeSubtitleMode::TranslateToEnglish, QStringLiteral("Translate to English")},
+        };
+        for (const auto &[mode, label] : modes) {
+            auto *act = realtimeMenu->addAction(label);
+            act->setCheckable(true);
+            act->setChecked(m_realtimeSubtitle->mode() == mode);
+            realtimeGroup->addAction(act);
+            connect(act, &QAction::triggered, this, [this, mode]() { m_realtimeSubtitle->setMode(mode); });
+        }
+        realtimeMenu->addSeparator();
+        realtimeMenu->addAction(QStringLiteral("Model && Language..."), this, &MainWindow::openPreferencesDialog);
+    } else {
+        m_subtitleTracksMenu->addAction(QStringLiteral("Realtime subtitle (not in this build)"))->setEnabled(false);
+    }
+    m_subtitleTracksMenu->addSeparator();
     m_subtitleTracksMenu->addAction(QStringLiteral("Cycle Subtitle Track\tL"), m_engine, &PlaybackEngine::cycleSubtitleTrack);
     m_subtitleTracksMenu->addAction(QStringLiteral("Subtitle Delay -0.1s\t< or ,"), [this]() {
         double d = m_engine->subtitleDelay() - 0.1;
@@ -638,6 +663,9 @@ void MainWindow::rebuildTrackMenus() {
 }
 
 void MainWindow::onTracksChanged() {
+    // Realtime subtitle reloads its track every few seconds; rebuilding would close an open menu.
+    // showContextMenu() rebuilds before every popup anyway.
+    if (m_contextMenu && m_contextMenu->isVisible()) return;
     rebuildTrackMenus();
 }
 
@@ -806,6 +834,7 @@ void MainWindow::openMediaFile(const QString &filePath, double startSeconds) {
     if (startSeconds < 0.0) {
         startSeconds = settings.rememberPlaybackPosition() ? settings.resumePosition(filePath) : 0.0;
     }
+    m_realtimeSubtitle->mediaOpened(filePath);
     m_engine->open(filePath, startSeconds);
 }
 
@@ -899,6 +928,7 @@ void MainWindow::openPreferencesDialog() {
     dlg.exec();
     // The dialog applies engine settings itself but has no access to the playlist
     applyPlaylistPreferences();
+    m_realtimeSubtitle->reloadSettings();
 }
 
 void MainWindow::toggleFullscreen() {

@@ -38,6 +38,7 @@ Built with **C++20**, **Qt 6 Widgets**, and the **libmpv** playback engine, runn
   - **Pixel Shaders**: Real-time GLSL post-processing (Sharpen, Invert, Grayscale, Sepia, Contour, Emboss, Night Vision). Drop your own mpv `.glsl` hooks into `~/.config/omnipot/shaders/`.
   - **Frame & Consecutive Capture**: Save single frames (`Ctrl+E`) or burst capture video segments (`Ctrl+Alt+E`) with user-defined intervals and limits.
   - **Audio Extraction (`Alt+A`)**: Convert the audio track of the current file to MP3, AAC, FLAC, WAV, OGG, or Opus (requires the `ffmpeg` command).
+  - **Realtime subtitle**: Generates subtitles from the speech while media plays, in the original language or translated to English, using [whisper.cpp](https://github.com/ggml-org/whisper.cpp) entirely on your computer (no audio leaves the machine). Turn it on from **Subtitles → Realtime subtitle**; the speech model (75–466 MB) downloads on first use. When a file opens, playback waits briefly ("Preparing subtitles...", at most 15 s) until the first lines are ready, so the opening dialogue isn't missed. It runs at low CPU priority so playback comes first; if a slow machine falls behind, it skips ahead to stay in time with the speech, so some lines may be missing but none arrive late.
   - **A-B Repeat (`[` / `]` / `\`)**: Loop sections of media with visual markers on the timeline.
   - **Bookmarks & Resume**: Bookmark positions (`P`) and automatically resume where you left off.
   - **Single Instance**: Files opened from the command line or file manager are queued in the already-running window.
@@ -126,6 +127,19 @@ sudo pacman -S --needed \
 
 - `ffmpeg` — needed for **Audio Extraction**.
 - `yt-dlp` — lets mpv open YouTube and other web video page URLs.
+- `ffmpeg` + `whisper.cpp` — needed for **Realtime subtitle**. whisper.cpp is a build-time dependency: on Debian 13+ / Kali install `libwhisper-dev`, on Arch use the `whisper.cpp` AUR package, elsewhere build it from source. Without it Omnipot builds normally, minus this feature (or pass `-DOMNIPOT_REALTIME_SUBTITLE=OFF`).
+
+#### Realtime subtitle performance
+
+The model is picked automatically from your CPU and can be changed in **Preferences → Subtitles**:
+
+| CPU threads | Automatic model | Notes |
+| :--- | :--- | :--- |
+| 1–3 | Tiny (~75 MB) | Fine for clear speech; translation is rough |
+| 4–7 | Base (~142 MB) | Good balance |
+| 8+ | Small (~466 MB) | Most accurate |
+
+It uses half the CPU threads (at most 4) at nice level 10. Local files and direct stream URLs work; standard input and web page URLs resolved by `yt-dlp` do not.
 
 ---
 
@@ -172,7 +186,7 @@ omnipot --seek=00:42:00 /path/to/video.mp4
 cat video.ts | omnipot -
 ```
 
-Settings, shaders, and resume positions are stored in `~/.config/omnipot/` (or `$XDG_CONFIG_HOME/omnipot/`).
+Settings, shaders, and resume positions are stored in `~/.config/omnipot/` (or `$XDG_CONFIG_HOME/omnipot/`). Realtime subtitle speech models are stored in `~/.local/share/omnipot/models/`.
 
 ---
 

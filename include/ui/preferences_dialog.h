@@ -65,6 +65,8 @@ private:
     QSpinBox *m_fontSizeSpin = nullptr;
     QSlider *m_subPosSlider = nullptr;
     QCheckBox *m_assOverrideCheck = nullptr;
+    QComboBox *m_realtimeModelCombo = nullptr;
+    QComboBox *m_realtimeLanguageCombo = nullptr;
 
     // Diagnostics / Log
     QTextEdit *m_logEdit = nullptr;
