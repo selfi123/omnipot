@@ -1,5 +1,7 @@
 # Omnipot
 
+> A fast, lightweight, and modern **PotPlayer alternative for Linux**.
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![C++20](https://img.shields.io/badge/Language-C%2B%2B20-00599C?logo=c%2B%2B)](https://en.cppreference.com/w/cpp/20)
 [![Qt 6](https://img.shields.io/badge/GUI-Qt%206-41CD52?logo=qt)](https://www.qt.io/)
@@ -131,8 +133,8 @@ sudo pacman -S --needed \
 
 ```bash
 # Clone the repository
-git clone https://github.com/selfi123/potplayer-linux.git
-cd potplayer-linux
+git clone https://github.com/selfi123/omnipot.git
+cd omnipot
 
 # Configure with CMake and Ninja
 cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release

@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Omnipot
 GenericName=Media Player
-Comment=Play video and audio files, playlists and network streams
+Comment=Fast, feature-rich PotPlayer alternative for Linux
 Exec=omnipot %U
 Icon=omnipot
 Terminal=false
@@ -9,7 +9,7 @@ Type=Application
 Categories=AudioVideo;Player;Video;Audio;Qt;
 MimeType=video/mp4;video/x-matroska;video/webm;video/avi;video/quicktime;video/x-msvideo;video/x-flv;video/mpeg;video/ogg;audio/mpeg;audio/mp4;audio/flac;audio/x-wav;audio/ogg;audio/aac;audio/opus;audio/x-mpegurl;application/x-mpegurl;
 StartupWMClass=omnipot
-Keywords=media;player;video;audio;mpv;streaming;
+Keywords=media;player;potplayer;omnipot;video;audio;mpv;streaming;
 Actions=NewWindow;
 
 [Desktop Action NewWindow]
