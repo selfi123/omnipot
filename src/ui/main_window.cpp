@@ -318,33 +318,38 @@ void MainWindow::setupUi() {
     m_timeLabel->setToolTip(QStringLiteral("Click to toggle Remaining Time"));
     bottomRow->addWidget(m_timeLabel);
 
-    // Codec & Status Badges
+    // Codec & Status Badges (Interactive)
     m_hwSwBadge = new QLabel(QStringLiteral("S/W"), controlBar);
     m_hwSwBadge->setObjectName(QStringLiteral("badge"));
-    m_hwSwBadge->setToolTip(QStringLiteral("Hardware / Software Video Decoding Status"));
+    m_hwSwBadge->setCursor(Qt::PointingHandCursor);
+    m_hwSwBadge->setToolTip(QStringLiteral("Hardware Acceleration (Click to toggle H/W vs S/W)"));
     bottomRow->addWidget(m_hwSwBadge);
 
     m_hdrBadge = new QLabel(QStringLiteral("HDR"), controlBar);
     m_hdrBadge->setObjectName(QStringLiteral("badge"));
-    m_hdrBadge->setToolTip(QStringLiteral("High Dynamic Range (HDR) Playback"));
+    m_hdrBadge->setCursor(Qt::PointingHandCursor);
+    m_hdrBadge->setToolTip(QStringLiteral("High Dynamic Range (Click to toggle Playback Info)"));
     m_hdrBadge->hide();
     bottomRow->addWidget(m_hdrBadge);
 
     m_videoCodecBadge = new QLabel(controlBar);
     m_videoCodecBadge->setObjectName(QStringLiteral("badge"));
-    m_videoCodecBadge->setToolTip(QStringLiteral("Video Codec"));
+    m_videoCodecBadge->setCursor(Qt::PointingHandCursor);
+    m_videoCodecBadge->setToolTip(QStringLiteral("Video Codec (Click to toggle Playback Info)"));
     m_videoCodecBadge->hide();
     bottomRow->addWidget(m_videoCodecBadge);
 
     m_audioCodecBadge = new QLabel(controlBar);
     m_audioCodecBadge->setObjectName(QStringLiteral("badge"));
-    m_audioCodecBadge->setToolTip(QStringLiteral("Audio Codec"));
+    m_audioCodecBadge->setCursor(Qt::PointingHandCursor);
+    m_audioCodecBadge->setToolTip(QStringLiteral("Audio Codec (Click to Cycle Audio Track)"));
     m_audioCodecBadge->hide();
     bottomRow->addWidget(m_audioCodecBadge);
 
     m_channelsBadge = new QLabel(controlBar);
     m_channelsBadge->setObjectName(QStringLiteral("badge"));
-    m_channelsBadge->setToolTip(QStringLiteral("Audio Channel Layout"));
+    m_channelsBadge->setCursor(Qt::PointingHandCursor);
+    m_channelsBadge->setToolTip(QStringLiteral("Audio Channels (Click to Toggle Normalizer)"));
     m_channelsBadge->hide();
     bottomRow->addWidget(m_channelsBadge);
 
@@ -960,6 +965,17 @@ void MainWindow::toggleTimeDisplayMode() {
     onPositionChanged(m_currentPosition);
 }
 
+void MainWindow::toggleHardwareAcceleration() {
+    bool isHw = (m_hwSwBadge->text() == QStringLiteral("H/W"));
+    if (isHw) {
+        m_engine->setHwdec(QStringLiteral("no"));
+        m_engine->showOsdText(QStringLiteral("Hardware Acceleration: Disabled (Software)"), 2000);
+    } else {
+        m_engine->setHwdec(QStringLiteral("vaapi,auto-safe"));
+        m_engine->showOsdText(QStringLiteral("Hardware Acceleration: Enabled (H/W)"), 2000);
+    }
+}
+
 void MainWindow::onStateChanged(PlaybackState state) {
     bool isIdle = (state == PlaybackState::Idle || state == PlaybackState::Stopped || state == PlaybackState::Error);
     if (m_videoWidget) {
@@ -1048,8 +1064,10 @@ void MainWindow::onMetadataChanged(const MediaMetadata &metadata) {
 void MainWindow::updateBadges(const MediaMetadata &meta) {
     m_hwSwBadge->setText(meta.isHardwareDecoded ? QStringLiteral("H/W") : QStringLiteral("S/W"));
     m_hwSwBadge->setStyleSheet(meta.isHardwareDecoded
-        ? QStringLiteral("QLabel#badge { background-color: #1A3820; border: 1px solid #287030; color: #44DD66; }")
-        : QStringLiteral("QLabel#badge { background-color: #202020; border: 1px solid #383838; color: #AAAAAA; }"));
+        ? QStringLiteral("QLabel#badge { background-color: #1A3820; border: 1px solid #287030; color: #44DD66; } "
+                         "QLabel#badge:hover { background-color: #224528; border: 1px solid #3AA040; color: #66FF88; }")
+        : QStringLiteral("QLabel#badge { background-color: #202020; border: 1px solid #383838; color: #AAAAAA; } "
+                         "QLabel#badge:hover { background-color: #2e2e2e; border: 1px solid #555555; color: #FFFFFF; }"));
 
     if (meta.isHdr) {
         m_hdrBadge->show();
@@ -1059,6 +1077,7 @@ void MainWindow::updateBadges(const MediaMetadata &meta) {
 
     if (!meta.videoCodec.isEmpty()) {
         m_videoCodecBadge->setText(meta.videoCodec);
+        m_videoCodecBadge->setToolTip(QStringLiteral("Video Codec: %1 (Click for detailed playback info)").arg(meta.videoCodec));
         m_videoCodecBadge->show();
     } else {
         m_videoCodecBadge->hide();
@@ -1066,6 +1085,7 @@ void MainWindow::updateBadges(const MediaMetadata &meta) {
 
     if (!meta.audioCodec.isEmpty()) {
         m_audioCodecBadge->setText(meta.audioCodec);
+        m_audioCodecBadge->setToolTip(QStringLiteral("Audio Codec: %1 (Click to cycle audio track)").arg(meta.audioCodec));
         m_audioCodecBadge->show();
     } else {
         m_audioCodecBadge->hide();
@@ -1079,6 +1099,7 @@ void MainWindow::updateBadges(const MediaMetadata &meta) {
         case 8: m_channelsBadge->setText(QStringLiteral("7.1")); break;
         default: m_channelsBadge->setText(QStringLiteral("%1CH").arg(meta.audioChannels)); break;
         }
+        m_channelsBadge->setToolTip(QStringLiteral("Audio Channels: %1 (Click to toggle Normalizer)").arg(m_channelsBadge->text()));
         m_channelsBadge->show();
     } else {
         m_channelsBadge->hide();
@@ -1441,6 +1462,7 @@ void MainWindow::updateWindowBorder() {
         "QWidget#controlBar QPushButton:pressed { background-color: #141414; border: 1px solid #222222; color: #888888; }"
         "QWidget#controlBar QPushButton:checked { background-color: #382A1A; border: 1px solid #F0A020; color: #FFFFFF; }"
         "QLabel#badge { background-color: #202020; border: 1px solid #383838; border-radius: 2px; padding: 1px 4px; font-weight: bold; font-size: 10px; color: #AAAAAA; }"
+        "QLabel#badge:hover { background-color: #2e2e2e; border: 1px solid #555555; color: #FFFFFF; }"
         "QSlider::groove:horizontal { height: 4px; background: #2B2B2B; border-radius: 2px; }"
         "QSlider::sub-page:horizontal { background: #E5A823; border-radius: 2px; }"
         "QSlider::handle:horizontal { background: #FFFFFF; border: 1px solid #888888; width: 10px; margin-top: -3px; margin-bottom: -3px; border-radius: 5px; }"
@@ -1491,9 +1513,29 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event) {
         }
     } else if (event->type() == QEvent::MouseButtonPress) {
         auto *mouseEv = static_cast<QMouseEvent*>(event);
-        if (watched == m_timeLabel && mouseEv->button() == Qt::LeftButton) {
-            toggleTimeDisplayMode();
-            return true;
+        if (mouseEv->button() == Qt::LeftButton) {
+            if (watched == m_timeLabel) {
+                toggleTimeDisplayMode();
+                return true;
+            }
+            if (watched == m_hwSwBadge) {
+                toggleHardwareAcceleration();
+                return true;
+            }
+            if (watched == m_videoCodecBadge || watched == m_hdrBadge) {
+                toggleInfoOverlay();
+                return true;
+            }
+            if (watched == m_audioCodecBadge) {
+                m_engine->cycleAudioTrack();
+                return true;
+            }
+            if (watched == m_channelsBadge) {
+                bool newState = !m_engine->isNormalizerEnabled();
+                m_engine->setNormalizerEnabled(newState);
+                m_engine->showOsdText(newState ? QStringLiteral("Audio Normalizer: Enabled") : QStringLiteral("Audio Normalizer: Disabled"));
+                return true;
+            }
         }
         if (mouseEv->button() == Qt::LeftButton && !isMaximized() && !isFullScreen()) {
             QPoint winPos = mapFromGlobal(mouseEv->globalPosition().toPoint());

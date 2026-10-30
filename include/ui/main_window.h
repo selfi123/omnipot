@@ -75,6 +75,7 @@ private Q_SLOTS:
     void toggleFullscreen();
     void showContextMenu(const QPoint &globalPos);
     void toggleTimeDisplayMode();
+    void toggleHardwareAcceleration();
 
 private:
     void setupUi();
