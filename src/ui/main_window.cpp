@@ -844,6 +844,10 @@ void MainWindow::openMediaFile(const QString &filePath, double startSeconds) {
 }
 
 void MainWindow::promptOpenFile() {
+    bool wasPlaying = (m_engine->state() == PlaybackState::Playing);
+    if (wasPlaying) {
+        m_engine->pause();
+    }
     const QString file = QFileDialog::getOpenFileName(
         this,
         QStringLiteral("Open Media File"),
@@ -852,6 +856,8 @@ void MainWindow::promptOpenFile() {
     );
     if (!file.isEmpty()) {
         openPaths({file});
+    } else if (wasPlaying) {
+        m_engine->play();
     }
 }
 
@@ -905,6 +911,10 @@ void MainWindow::openSubtitleSearchDialog() {
 }
 
 void MainWindow::promptLoadLocalSubtitle() {
+    bool wasPlaying = (m_engine->state() == PlaybackState::Playing);
+    if (wasPlaying) {
+        m_engine->pause();
+    }
     QString filter = QStringLiteral("Subtitle Files (*.srt *.ass *.ssa *.vtt *.sub *.smi *.idx *.sup);;All Files (*.*)");
     QString path = QFileDialog::getOpenFileName(this, QStringLiteral("Load Subtitle File (Alt+O)"), QString(), filter);
     if (!path.isEmpty() && m_engine->rawMpvHandle()) {
@@ -912,6 +922,9 @@ void MainWindow::promptLoadLocalSubtitle() {
         const char *cmd[] = {"sub-add", utf8Path.constData(), "select", nullptr};
         mpv_command(m_engine->rawMpvHandle(), cmd);
         rebuildTrackMenus();
+    }
+    if (wasPlaying) {
+        m_engine->play();
     }
 }
 

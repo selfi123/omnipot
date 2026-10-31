@@ -54,6 +54,7 @@ bool MpvEngine::initialize() {
     mpv_set_option_string(m_mpv, "audio-normalize-downmix", "yes");
     mpv_set_option_string(m_mpv, "audio-pitch-correction", "yes");
     mpv_set_option_string(m_mpv, "replaygain", "no");
+    mpv_set_option_string(m_mpv, "video-timing-offset", "0");
 
     int status = mpv_initialize(m_mpv);
     if (status < 0) {
