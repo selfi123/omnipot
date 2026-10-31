@@ -127,17 +127,17 @@ sudo pacman -S --needed \
 
 - `ffmpeg` — needed for **Audio Extraction**.
 - `yt-dlp` — lets mpv open YouTube and other web video page URLs.
-- `ffmpeg` + `whisper.cpp` — needed for **Realtime subtitle**. whisper.cpp is a build-time dependency: on Debian 13+ / Kali install `libwhisper-dev`, on Arch use the `whisper.cpp` AUR package, elsewhere build it from source. Without it Omnipot builds normally, minus this feature (or pass `-DOMNIPOT_REALTIME_SUBTITLE=OFF`).
+- `ffmpeg` + `whisper.cpp` — needed for **Realtime subtitle**. CMake will automatically fetch and compile a clean, lightweight bundled `whisper.cpp` (~2 MB) without requiring any heavy distro packages or GPU bloat. If you prefer to use system libraries, pass `-DOMNIPOT_USE_SYSTEM_WHISPER=ON`. To build without this feature, pass `-DOMNIPOT_REALTIME_SUBTITLE=OFF`.
 
 #### Realtime subtitle performance
 
-The model is picked automatically from your CPU and can be changed in **Preferences → Subtitles**:
+The model is picked automatically based on your CPU threads and can be changed in **Preferences → Subtitles**:
 
 | CPU threads | Automatic model | Notes |
 | :--- | :--- | :--- |
-| 1–3 | Tiny (~75 MB) | Fine for clear speech; translation is rough |
-| 4–7 | Base (~142 MB) | Good balance |
-| 8+ | Small (~466 MB) | Most accurate |
+| 1–3 | Tiny (~75 MB) | Fastest; recommended for responsive real-time playback |
+| 4–15 | Base (~142 MB) | Balanced accuracy and speed on multi-core CPUs |
+| 16+ | Small (~466 MB) | Highest accuracy; best for powerful multi-threaded workstations |
 
 It uses half the CPU threads (at most 4) at nice level 10. Local files and direct stream URLs work; standard input and web page URLs resolved by `yt-dlp` do not.
 

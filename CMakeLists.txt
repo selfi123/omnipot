@@ -25,39 +25,62 @@ pkg_check_modules(MPV REQUIRED IMPORTED_TARGET mpv)
 find_package(ZLIB REQUIRED)
 
 # Realtime subtitle needs whisper.cpp; without it Omnipot still builds, minus that feature
-option(OMNIPOT_REALTIME_SUBTITLE "Build the Realtime subtitle feature (requires whisper.cpp)" ON)
+option(OMNIPOT_REALTIME_SUBTITLE "Build the Realtime subtitle feature (offline speech-to-text)" ON)
 set(OMNIPOT_HAVE_WHISPER 0)
 if(OMNIPOT_REALTIME_SUBTITLE)
-    find_package(whisper CONFIG QUIET)
-    if(TARGET whisper)
-        set(OMNIPOT_WHISPER_TARGET whisper)
-    else()
-        pkg_check_modules(WHISPER QUIET IMPORTED_TARGET whisper)
-        if(WHISPER_FOUND)
-            set(OMNIPOT_WHISPER_TARGET PkgConfig::WHISPER)
+    # Prefer lightweight bundled whisper.cpp via FetchContent so users don't need heavy distro packages
+    option(OMNIPOT_USE_SYSTEM_WHISPER "Use system-installed whisper.cpp instead of lightweight bundled build" OFF)
+
+    if(OMNIPOT_USE_SYSTEM_WHISPER)
+        find_package(whisper CONFIG QUIET)
+        if(TARGET whisper)
+            set(OMNIPOT_WHISPER_TARGET whisper)
         else()
-            find_path(WHISPER_INCLUDE_DIR NAMES whisper.h PATH_SUFFIXES whisper)
-            find_library(WHISPER_LIB NAMES whisper whisper-cpp)
-            if(WHISPER_INCLUDE_DIR AND WHISPER_LIB)
-                add_library(whisper_imported UNKNOWN IMPORTED)
-                set_target_properties(whisper_imported PROPERTIES
-                    IMPORTED_LOCATION "${WHISPER_LIB}"
-                    INTERFACE_INCLUDE_DIRECTORIES "${WHISPER_INCLUDE_DIR}"
-                )
-                set(OMNIPOT_WHISPER_TARGET whisper_imported)
+            pkg_check_modules(WHISPER QUIET IMPORTED_TARGET whisper)
+            if(WHISPER_FOUND)
+                set(OMNIPOT_WHISPER_TARGET PkgConfig::WHISPER)
+            else()
+                find_path(WHISPER_INCLUDE_DIR NAMES whisper.h PATH_SUFFIXES whisper)
+                find_library(WHISPER_LIB NAMES whisper whisper-cpp)
+                if(WHISPER_INCLUDE_DIR AND WHISPER_LIB)
+                    add_library(whisper_imported UNKNOWN IMPORTED)
+                    set_target_properties(whisper_imported PROPERTIES
+                        IMPORTED_LOCATION "${WHISPER_LIB}"
+                        INTERFACE_INCLUDE_DIRECTORIES "${WHISPER_INCLUDE_DIR}"
+                    )
+                    set(OMNIPOT_WHISPER_TARGET whisper_imported)
+                endif()
+            endif()
+        endif()
+        if(OMNIPOT_WHISPER_TARGET)
+            find_library(GGML_LIB NAMES ggml)
+            if(GGML_LIB)
+                list(APPEND OMNIPOT_WHISPER_TARGET ${GGML_LIB})
             endif()
         endif()
     endif()
+
+    if(NOT OMNIPOT_WHISPER_TARGET)
+        message(STATUS "Realtime subtitle: fetching lightweight bundled whisper.cpp (no external GPU dependencies)...")
+        include(FetchContent)
+        set(WHISPER_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+        set(WHISPER_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+        set(WHISPER_BUILD_SERVER OFF CACHE BOOL "" FORCE)
+        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+        FetchContent_Declare(
+            whisper
+            GIT_REPOSITORY https://github.com/ggerganov/whisper.cpp.git
+            GIT_TAG        v1.7.4
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(whisper)
+        set(OMNIPOT_WHISPER_TARGET whisper)
+    endif()
+
     if(OMNIPOT_WHISPER_TARGET)
         set(OMNIPOT_HAVE_WHISPER 1)
-        find_library(GGML_LIB NAMES ggml)
-        if(GGML_LIB)
-            list(APPEND OMNIPOT_WHISPER_TARGET ${GGML_LIB})
-        endif()
-        message(STATUS "Realtime subtitle: enabled (whisper.cpp found)")
-    else()
-        message(WARNING "whisper.cpp not found: building without Realtime subtitle. "
-                        "Install libwhisper-dev (Debian/Ubuntu/Kali) or whisper.cpp, or pass -DOMNIPOT_REALTIME_SUBTITLE=OFF.")
+        message(STATUS "Realtime subtitle: enabled (whisper.cpp ready)")
     endif()
 endif()
 
